@@ -57,9 +57,9 @@ class ApiClient {
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
 
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     };
 
     // Add auth token if available
@@ -130,14 +130,14 @@ export default apiClient;
 export const api = {
   // Auth
   login: (email: string, password: string) =>
-    apiClient.post('/api/auth/login', { email, password }),
+    apiClient.post<{ user: any; token: string; refreshToken: string }>('/api/auth/login', { email, password }),
   register: (data: { email: string; password: string; name: string; role: string }) =>
-    apiClient.post('/api/auth/register', data),
-  getCurrentUser: () => apiClient.get('/api/auth/me'),
+    apiClient.post<{ user: any; token: string; refreshToken: string }>('/api/auth/register', data),
+  getCurrentUser: () => apiClient.get<{ user: any }>('/api/auth/me'),
 
   // Employees
   getEmployees: (params?: Record<string, any>) =>
-    apiClient.get('/api/employees', params),
+    apiClient.get<any[]>('/api/employees', params),
   getEmployee: (id: string) => apiClient.get(`/api/employees/${id}`),
   createEmployee: (data: any) => apiClient.post('/api/employees', data),
   updateEmployee: (id: string, data: any) =>
@@ -146,7 +146,7 @@ export const api = {
 
   // Departments
   getDepartments: (params?: Record<string, any>) =>
-    apiClient.get('/api/departments', params),
+    apiClient.get<any[]>('/api/departments', params),
   getDepartment: (id: string) => apiClient.get(`/api/departments/${id}`),
   createDepartment: (data: any) => apiClient.post('/api/departments', data),
   updateDepartment: (id: string, data: any) =>
@@ -155,7 +155,7 @@ export const api = {
 
   // Shifts
   getShifts: (params?: Record<string, any>) =>
-    apiClient.get('/api/shifts', params),
+    apiClient.get<any[]>('/api/shifts', params),
   getShift: (id: string) => apiClient.get(`/api/shifts/${id}`),
   createShift: (data: any) => apiClient.post('/api/shifts', data),
   updateShift: (id: string, data: any) =>
@@ -164,7 +164,7 @@ export const api = {
 
   // Meal Sessions
   getMealSessions: (params?: Record<string, any>) =>
-    apiClient.get('/api/meals/sessions', params),
+    apiClient.get<any[]>('/api/meals/sessions', params),
   getMealSession: (id: string) => apiClient.get(`/api/meals/sessions/${id}`),
   createMealSession: (data: any) =>
     apiClient.post('/api/meals/sessions', data),
@@ -175,7 +175,7 @@ export const api = {
 
   // Inventory Items
   getInventoryItems: (params?: Record<string, any>) =>
-    apiClient.get('/api/inventory/items', params),
+    apiClient.get<any[]>('/api/inventory/items', params),
   getInventoryItem: (id: string) => apiClient.get(`/api/inventory/items/${id}`),
   createInventoryItem: (data: any) =>
     apiClient.post('/api/inventory/items', data),
@@ -186,7 +186,7 @@ export const api = {
 
   // Stock Movements
   getStockMovements: (params?: Record<string, any>) =>
-    apiClient.get('/api/inventory/movements', params),
+    apiClient.get<any[]>('/api/inventory/movements', params),
   getStockMovement: (id: string) => apiClient.get(`/api/inventory/movements/${id}`),
   createStockMovement: (data: any) =>
     apiClient.post('/api/inventory/movements', data),
@@ -197,7 +197,7 @@ export const api = {
 
   // Reconciliations
   getReconciliations: (params?: Record<string, any>) =>
-    apiClient.get('/api/inventory/reconciliations', params),
+    apiClient.get<any[]>('/api/inventory/reconciliations', params),
   getReconciliation: (id: string) => apiClient.get(`/api/inventory/reconciliations/${id}`),
   createReconciliation: (data: any) =>
     apiClient.post('/api/inventory/reconciliations', data),
@@ -208,7 +208,7 @@ export const api = {
 
   // Vendors
   getVendors: (params?: Record<string, any>) =>
-    apiClient.get('/api/procurement/vendors', params),
+    apiClient.get<any[]>('/api/procurement/vendors', params),
   getVendor: (id: string) => apiClient.get(`/api/procurement/vendors/${id}`),
   createVendor: (data: any) => apiClient.post('/api/procurement/vendors', data),
   updateVendor: (id: string, data: any) =>

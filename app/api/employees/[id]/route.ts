@@ -18,7 +18,7 @@ import { getCurrentUser } from '@/lib/utils/auth-helpers';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
@@ -28,7 +28,8 @@ export async function GET(
       return unauthorizedError('Authentication required');
     }
 
-    const employee = await Employee.findById(params.id)
+    const { id } = await params;
+    const employee = await Employee.findById(id)
       .populate('department.id', 'name code')
       .populate('shift.id', 'name code')
       .lean();
@@ -50,7 +51,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
@@ -65,9 +66,10 @@ export async function PUT(
       return unauthorizedError('Insufficient permissions');
     }
 
+    const { id } = await params;
     const body = await request.json();
 
-    const employee = await Employee.findById(params.id);
+    const employee = await Employee.findById(id);
     if (!employee) {
       return notFoundError('Employee not found');
     }
@@ -116,7 +118,7 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
@@ -131,7 +133,8 @@ export async function DELETE(
       return unauthorizedError('Insufficient permissions');
     }
 
-    const employee = await Employee.findById(params.id);
+    const { id } = await params;
+    const employee = await Employee.findById(id);
     if (!employee) {
       return notFoundError('Employee not found');
     }

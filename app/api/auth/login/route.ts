@@ -65,8 +65,7 @@ export async function POST(request: NextRequest) {
     await user.save();
 
     // Remove password from response
-    const userResponse = user.toObject();
-    delete userResponse.password;
+    const { password: _, ...userResponse } = user.toObject();
 
     return successResponse({
       user: userResponse,

@@ -9,7 +9,7 @@ export interface IDevice extends Document {
   ipAddress?: string;
   macAddress?: string;
   manufacturer?: string;
-  model?: string;
+  deviceModel?: string;
   firmwareVersion?: string;
   status: 'ONLINE' | 'OFFLINE' | 'MAINTENANCE' | 'ERROR';
   lastHeartbeat?: Date;
@@ -52,7 +52,7 @@ const deviceSchema = new Schema<IDevice>(
     ipAddress: String,
     macAddress: String,
     manufacturer: String,
-    model: String,
+    deviceModel: String,
     firmwareVersion: String,
     status: {
       type: String,

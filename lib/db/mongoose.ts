@@ -3,8 +3,8 @@ import mongoose from 'mongoose';
 declare global {
   // eslint-disable-next-line no-var
   var mongoose: {
-    conn: typeof mongoose | null;
-    promise: Promise<typeof mongoose> | null;
+    conn: typeof import('mongoose') | null;
+    promise: Promise<typeof import('mongoose')> | null;
   };
 }
 
@@ -43,13 +43,13 @@ async function connectDB() {
       family: 4, // Use IPv4, skip trying IPv6
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongooseInstance) => {
       console.log('✅ MongoDB connected successfully');
-      return mongoose;
+      return mongooseInstance;
     }).catch((error) => {
       console.error('❌ MongoDB connection error:', error);
       throw error;
-    });
+    }) as Promise<typeof mongoose>;
   }
 
   try {
