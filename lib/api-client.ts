@@ -3,7 +3,9 @@
  * Handles authentication tokens and error responses
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+// Use relative URLs for same-domain API calls (works in both dev and production)
+// Only use NEXT_PUBLIC_APP_URL if explicitly set for external API calls
+const API_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || '';
 
 export interface ApiResponse<T = any> {
   success: boolean;

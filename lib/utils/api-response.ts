@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server';
 
 /**
+ * CORS Headers for API responses
+ */
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+/**
  * Standard API Response Interface
  */
 export interface ApiResponse<T = any> {
@@ -38,7 +47,7 @@ export function successResponse<T>(
         timestamp: new Date().toISOString(),
       },
     },
-    { status: 200 }
+    { status: 200, headers: corsHeaders }
   );
 }
 
@@ -58,7 +67,7 @@ export function createdResponse<T>(
         timestamp: new Date().toISOString(),
       },
     },
-    { status: 201 }
+    { status: 201, headers: corsHeaders }
   );
 }
 
@@ -83,7 +92,7 @@ export function errorResponse(
         timestamp: new Date().toISOString(),
       },
     },
-    { status }
+    { status, headers: corsHeaders }
   );
 }
 
