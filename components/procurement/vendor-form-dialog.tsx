@@ -1,0 +1,410 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  useCreateVendor,
+  useUpdateVendor,
+  type CreateVendorData,
+  type Vendor,
+} from '@/hooks/useVendors'
+import { Loader2 } from 'lucide-react'
+
+interface VendorFormDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  vendor?: Vendor | null
+  mode: 'create' | 'edit'
+}
+
+export function VendorFormDialog({
+  open,
+  onOpenChange,
+  vendor,
+  mode,
+}: VendorFormDialogProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const createMutation = useCreateVendor()
+  const updateMutation = useUpdateVendor()
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<CreateVendorData>({
+    defaultValues: {
+      vendorCode: '',
+      name: '',
+      category: 'INGREDIENTS',
+      contactPerson: {
+        name: '',
+        phone: '',
+        email: '',
+      },
+      address: {
+        street: '',
+        city: '',
+        state: '',
+        pincode: '',
+        country: 'India',
+      },
+      paymentTerms: {
+        creditDays: 0,
+        paymentMode: 'NEFT',
+      },
+      status: 'ACTIVE',
+    },
+  })
+
+  const selectedCategory = watch('category')
+  const selectedPaymentMode = watch('paymentTerms.paymentMode')
+  const selectedStatus = watch('status')
+
+  // Reset form when dialog opens/closes or vendor changes
+  useEffect(() => {
+    if (open) {
+      if (mode === 'edit' && vendor) {
+        reset({
+          vendorCode: vendor.vendorCode,
+          name: vendor.name,
+          category: vendor.category,
+          contactPerson: vendor.contactPerson,
+          address: vendor.address,
+          businessDetails: vendor.businessDetails,
+          bankDetails: vendor.bankDetails,
+          paymentTerms: vendor.paymentTerms,
+          rating: vendor.rating,
+          status: vendor.status,
+          notes: vendor.notes,
+        })
+      } else {
+        reset({
+          vendorCode: '',
+          name: '',
+          category: 'INGREDIENTS',
+          contactPerson: {
+            name: '',
+            phone: '',
+            email: '',
+          },
+          address: {
+            street: '',
+            city: '',
+            state: '',
+            pincode: '',
+            country: 'India',
+          },
+          paymentTerms: {
+            creditDays: 0,
+            paymentMode: 'NEFT',
+          },
+          status: 'ACTIVE',
+        })
+      }
+    }
+  }, [open, mode, vendor, reset])
+
+  const onSubmit = async (data: CreateVendorData) => {
+    setIsSubmitting(true)
+    try {
+      if (mode === 'edit' && vendor) {
+        await updateMutation.mutateAsync({ id: vendor._id, data })
+      } else {
+        await createMutation.mutateAsync(data)
+      }
+      onOpenChange(false)
+      reset()
+    } catch (error) {
+      console.error('Form submission error:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {mode === 'edit' ? 'Edit Vendor' : 'Add New Vendor'}
+          </DialogTitle>
+          <DialogDescription>
+            {mode === 'edit'
+              ? 'Update vendor information'
+              : 'Add a new vendor to your procurement system'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="basic">Basic Info</TabsTrigger>
+              <TabsTrigger value="contact">Contact</TabsTrigger>
+              <TabsTrigger value="business">Business</TabsTrigger>
+              <TabsTrigger value="payment">Payment</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="basic" className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="vendorCode">
+                    Vendor Code <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="vendorCode"
+                    placeholder="e.g., VEN001"
+                    {...register('vendorCode', { required: 'Vendor code is required' })}
+                  />
+                  {errors.vendorCode && (
+                    <p className="text-sm text-red-600">{errors.vendorCode.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="name">
+                    Vendor Name <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="name"
+                    placeholder="e.g., ABC Supplies"
+                    {...register('name', { required: 'Vendor name is required' })}
+                  />
+                  {errors.name && (
+                    <p className="text-sm text-red-600">{errors.name.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="category">
+                    Category <span className="text-red-500">*</span>
+                  </Label>
+                  <Select value={selectedCategory} onValueChange={(value: any) => setValue('category', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="FOOD">Food</SelectItem>
+                      <SelectItem value="BEVERAGE">Beverage</SelectItem>
+                      <SelectItem value="INGREDIENTS">Ingredients</SelectItem>
+                      <SelectItem value="PACKAGING">Packaging</SelectItem>
+                      <SelectItem value="EQUIPMENT">Equipment</SelectItem>
+                      <SelectItem value="SERVICES">Services</SelectItem>
+                      <SelectItem value="OTHER">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select value={selectedStatus} onValueChange={(value: any) => setValue('status', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ACTIVE">Active</SelectItem>
+                      <SelectItem value="INACTIVE">Inactive</SelectItem>
+                      <SelectItem value="SUSPENDED">Suspended</SelectItem>
+                      <SelectItem value="BLACKLISTED">Blacklisted</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Additional notes about the vendor..."
+                    rows={3}
+                    {...register('notes')}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="contact" className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="contactPerson.name">
+                    Contact Person <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="contactPerson.name"
+                    placeholder="e.g., John Doe"
+                    {...register('contactPerson.name', { required: 'Contact person is required' })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contactPerson.designation">Designation</Label>
+                  <Input
+                    id="contactPerson.designation"
+                    placeholder="e.g., Sales Manager"
+                    {...register('contactPerson.designation')}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contactPerson.phone">
+                    Phone <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="contactPerson.phone"
+                    placeholder="e.g., +91 9876543210"
+                    {...register('contactPerson.phone', { required: 'Phone is required' })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="contactPerson.email">
+                    Email <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="contactPerson.email"
+                    type="email"
+                    placeholder="e.g., contact@vendor.com"
+                    {...register('contactPerson.email', { required: 'Email is required' })}
+                  />
+                </div>
+
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="address.street">
+                    Address <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="address.street"
+                    placeholder="Street address"
+                    {...register('address.street', { required: 'Street is required' })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address.city">City <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="address.city"
+                    {...register('address.city', { required: 'City is required' })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address.state">State <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="address.state"
+                    {...register('address.state', { required: 'State is required' })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address.pincode">Pincode <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="address.pincode"
+                    {...register('address.pincode', { required: 'Pincode is required' })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address.country">Country</Label>
+                  <Input
+                    id="address.country"
+                    {...register('address.country')}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="business" className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="businessDetails.gstNumber">GST Number</Label>
+                  <Input
+                    id="businessDetails.gstNumber"
+                    placeholder="e.g., 22AAAAA0000A1Z5"
+                    {...register('businessDetails.gstNumber')}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="businessDetails.panNumber">PAN Number</Label>
+                  <Input
+                    id="businessDetails.panNumber"
+                    placeholder="e.g., AAAAA0000A"
+                    {...register('businessDetails.panNumber')}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="payment" className="space-y-4 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="paymentTerms.creditDays">Credit Days</Label>
+                  <Input
+                    id="paymentTerms.creditDays"
+                    type="number"
+                    min="0"
+                    {...register('paymentTerms.creditDays', { valueAsNumber: true })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="paymentTerms.paymentMode">Payment Mode</Label>
+                  <Select value={selectedPaymentMode} onValueChange={(value: any) => setValue('paymentTerms.paymentMode', value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CASH">Cash</SelectItem>
+                      <SelectItem value="CHEQUE">Cheque</SelectItem>
+                      <SelectItem value="NEFT">NEFT</SelectItem>
+                      <SelectItem value="RTGS">RTGS</SelectItem>
+                      <SelectItem value="UPI">UPI</SelectItem>
+                      <SelectItem value="ONLINE">Online</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {mode === 'edit' ? 'Update Vendor' : 'Create Vendor'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
