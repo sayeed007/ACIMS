@@ -22,8 +22,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password } = body;
 
+    console.log('Login attempt for email:', email);
+    console.log('Request body keys:', Object.keys(body));
+
     // Validation
     if (!email || !password) {
+      console.log('Validation failed: missing email or password');
       return validationError('Email and password are required');
     }
 
@@ -33,17 +37,23 @@ export async function POST(request: NextRequest) {
       .populate('department', 'name code');
 
     if (!user) {
+      console.log('User not found for email:', email);
       return unauthorizedError('Invalid email or password');
     }
 
+    console.log('User found:', { email: user.email, status: user.status, hasPassword: !!user.password });
+
     // Check if user is active
     if (user.status !== 'ACTIVE') {
+      console.log('User account is not active:', user.status);
       return unauthorizedError(`Account is ${user.status.toLowerCase()}`);
     }
 
     // Verify password
     const isPasswordValid = await user.comparePassword(password);
+    console.log('Password validation result:', isPasswordValid);
     if (!isPasswordValid) {
+      console.log('Password comparison failed for user:', email);
       return unauthorizedError('Invalid email or password');
     }
 

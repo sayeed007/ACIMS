@@ -216,6 +216,65 @@ export const api = {
   updateVendor: (id: string, data: any) =>
     apiClient.put(`/api/procurement/vendors/${id}`, data),
   deleteVendor: (id: string) => apiClient.delete(`/api/procurement/vendors/${id}`),
+
+  // Purchase Demands
+  getDemands: (params?: Record<string, any>) =>
+    apiClient.get<any[]>('/api/procurement/demands', params),
+  getDemand: (id: string) => apiClient.get(`/api/procurement/demands/${id}`),
+  createDemand: (data: any) => apiClient.post('/api/procurement/demands', data),
+  updateDemand: (id: string, data: any) =>
+    apiClient.put(`/api/procurement/demands/${id}`, data),
+  deleteDemand: (id: string) => apiClient.delete(`/api/procurement/demands/${id}`),
+  getDemandStats: () => apiClient.get('/api/procurement/demands/stats'),
+
+  // Purchase Orders
+  getPurchaseOrders: (params?: Record<string, any>) =>
+    apiClient.get<any[]>('/api/procurement/orders', params),
+  getPurchaseOrder: (id: string) => apiClient.get(`/api/procurement/orders/${id}`),
+  createPurchaseOrder: (data: any) => apiClient.post('/api/procurement/orders', data),
+  updatePurchaseOrder: (id: string, data: any) =>
+    apiClient.put(`/api/procurement/orders/${id}`, data),
+  deletePurchaseOrder: (id: string) => apiClient.delete(`/api/procurement/orders/${id}`),
+  getPurchaseOrderStats: () => apiClient.get('/api/procurement/orders/stats'),
+
+  // Bills
+  getBills: (params?: Record<string, any>) =>
+    apiClient.get<any[]>('/api/procurement/bills', params),
+  getBill: (id: string) => apiClient.get(`/api/procurement/bills/${id}`),
+  createBill: (data: any) => apiClient.post('/api/procurement/bills', data),
+  updateBill: (id: string, data: any) =>
+    apiClient.put(`/api/procurement/bills/${id}`, data),
+  deleteBill: (id: string) => apiClient.delete(`/api/procurement/bills/${id}`),
+  getBillStats: () => apiClient.get('/api/procurement/bills/stats'),
+
+  // Eligibility Rules
+  getEligibilityRules: (params?: Record<string, any>) =>
+    apiClient.get<any[]>('/api/eligibility/rules', params),
+  getEligibilityRule: (id: string) => apiClient.get(`/api/eligibility/rules/${id}`),
+  createEligibilityRule: (data: any) => apiClient.post('/api/eligibility/rules', data),
+  updateEligibilityRule: (id: string, data: any) =>
+    apiClient.put(`/api/eligibility/rules/${id}`, data),
+  deleteEligibilityRule: (id: string) => apiClient.delete(`/api/eligibility/rules/${id}`),
+  getEligibilityRuleStats: () => apiClient.get('/api/eligibility/rules/stats'),
+  verifyMealEligibility: (data: { employeeId: string; mealSessionId: string; timestamp?: string }) =>
+    apiClient.post('/api/eligibility/verify', data),
+
+  // Access Control Roles
+  getAccessControlRoles: (params?: Record<string, any>) =>
+    apiClient.get<any[]>('/api/access-control/roles', params),
+  getAccessControlRole: (id: string) => apiClient.get(`/api/access-control/roles/${id}`),
+  createAccessControlRole: (data: any) => apiClient.post('/api/access-control/roles', data),
+  updateAccessControlRole: (id: string, data: any) =>
+    apiClient.put(`/api/access-control/roles/${id}`, data),
+  deleteAccessControlRole: (id: string) => apiClient.delete(`/api/access-control/roles/${id}`),
+
+  // Reports
+  getMealReports: (params?: Record<string, any>) =>
+    apiClient.get('/api/reports/meals', params),
+  getCostReports: (params?: Record<string, any>) =>
+    apiClient.get('/api/reports/costs', params),
+  getAuditLogs: (params?: Record<string, any>) =>
+    apiClient.get('/api/reports/audit', params),
 };
 
 export { apiClient };

@@ -1,11 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install:*)",
-      "Bash(npm run seed:*)",
-      "Bash(npm run dev:*)",
-      "Bash(curl:*)",
-      "Bash(npm run build:*)"
+      "Bash(Remove-Item -Recurse -Force .next/dev/lock -ErrorAction SilentlyContinue)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

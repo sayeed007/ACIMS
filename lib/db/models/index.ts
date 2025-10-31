@@ -22,6 +22,13 @@ export { default as InventoryItem } from './InventoryItem';
 
 // Procurement & Financial
 export { default as Vendor } from './Vendor';
+export { default as PurchaseDemand } from './PurchaseDemand';
+export { default as PurchaseOrder } from './PurchaseOrder';
+export { default as Bill } from './Bill';
+
+// Eligibility & Access Control
+export { default as EligibilityRule } from './EligibilityRule';
+export { default as AccessControlRule } from './AccessControlRule';
 
 // Notifications & System
 export { default as Notification } from './Notification';
@@ -39,6 +46,11 @@ export type { IMealSession } from './MealSession';
 export type { IMealTransaction } from './MealTransaction';
 export type { IInventoryItem } from './InventoryItem';
 export type { IVendor } from './Vendor';
+export type { IPurchaseDemand } from './PurchaseDemand';
+export type { IPurchaseOrder } from './PurchaseOrder';
+export type { IBill } from './Bill';
+export type { IEligibilityRule } from './EligibilityRule';
+export type { IAccessControlRule } from './AccessControlRule';
 export type { INotification } from './Notification';
 export type { IAuditLog } from './AuditLog';
 export type { IDevice } from './Device';
