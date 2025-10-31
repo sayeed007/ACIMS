@@ -5,6 +5,8 @@ export interface IDepartment extends Document {
   name: string;
   code: string;
   description?: string;
+  location?: string;
+  costCenter?: string;
   headOfDepartment?: Types.ObjectId;
   parentDepartment?: Types.ObjectId;
   status: 'ACTIVE' | 'INACTIVE';
@@ -31,6 +33,14 @@ const departmentSchema = new Schema<IDepartment>(
       trim: true,
     },
     description: String,
+    location: {
+      type: String,
+      trim: true,
+    },
+    costCenter: {
+      type: String,
+      trim: true,
+    },
     headOfDepartment: {
       type: Schema.Types.ObjectId,
       ref: 'User',

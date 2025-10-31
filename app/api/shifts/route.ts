@@ -8,6 +8,7 @@ import {
   conflictError,
   unauthorizedError,
   internalServerError,
+  getPaginationMeta,
 } from '@/lib/utils/api-response';
 import { getCurrentUser } from '@/lib/utils/auth-helpers';
 
@@ -29,17 +30,20 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
 
-    const query: any = {};
+    const query: any = { isDeleted: false };
     if (status) {
       query.status = status;
     }
+
+    // Count total shifts
+    const total = await Shift.countDocuments(query);
 
     const shifts = await Shift.find(query)
       .populate('eligibleMealSessions', 'name code')
       .sort({ name: 1 })
       .lean();
 
-    return successResponse(shifts);
+    return successResponse(shifts, getPaginationMeta({ total }));
   } catch (error: any) {
     console.error('Get shifts error:', error);
     return internalServerError('Failed to fetch shifts', error.message);
@@ -65,7 +69,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, code, startTime, endTime, eligibleMealSessions, overtimeThreshold } = body;
+    const {
+      name,
+      code,
+      description,
+      startTime,
+      endTime,
+      gracePeriod,
+      mealEligibility,
+      eligibleMealSessions,
+      overtimeThreshold
+    } = body;
 
     // Validation
     if (!name || !code || !startTime || !endTime) {
@@ -87,8 +101,11 @@ export async function POST(request: NextRequest) {
     const shift = new Shift({
       name,
       code: code.toUpperCase(),
+      description,
       startTime,
       endTime,
+      gracePeriod,
+      mealEligibility,
       eligibleMealSessions: eligibleMealSessions || [],
       overtimeThreshold,
       status: 'ACTIVE',

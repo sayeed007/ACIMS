@@ -55,12 +55,15 @@ export async function GET(request: NextRequest) {
 
     // Filter by status
     const status = searchParams.get('status');
-    if (status) {
+    // Only apply status filter if explicitly provided and not empty
+    // Pass 'all' or empty string to get all statuses
+    if (status && status !== 'all' && status !== '') {
       query.status = status;
-    } else {
-      // Default: only show active employees
+    } else if (!searchParams.has('status')) {
+      // Default: only show active employees when status param is not provided at all
       query.status = 'ACTIVE';
     }
+    // If status is explicitly 'all' or '', don't filter by status
 
     // Search by name or employee ID
     const search = searchParams.get('search');

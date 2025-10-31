@@ -28,18 +28,59 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
+    const search = searchParams.get('search');
+    const mealType = searchParams.get('mealType');
+    const isActive = searchParams.get('isActive');
 
     const query: any = {};
+
+    // Filter by status
     if (status) {
       query.status = status;
     }
 
+    // Filter by isActive
+    if (isActive !== null && isActive !== undefined) {
+      query.status = isActive === 'true' ? 'ACTIVE' : 'INACTIVE';
+    }
+
+    // Filter by meal type
+    if (mealType) {
+      query.mealType = mealType;
+    }
+
+    // Search by name or code
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { code: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    // Count total documents matching the query
+    const total = await MealSession.countDocuments(query);
+
     const sessions = await MealSession.find(query)
       .populate('eligibleShifts', 'name code')
+      .populate('allowedDepartments', 'name code')
       .sort({ displayOrder: 1, startTime: 1 })
       .lean();
 
-    return successResponse(sessions);
+    // Transform data to match frontend expectations
+    const transformedSessions = sessions.map((session: any) => ({
+      ...session,
+      isActive: session.status === 'ACTIVE',
+      allowedShifts: session.eligibleShifts?.map((s: any) => s._id?.toString() || s) || [],
+    }));
+
+    return successResponse(transformedSessions, {
+      pagination: {
+        page: 1,
+        limit: total,
+        total,
+        totalPages: 1,
+      },
+    });
   } catch (error: any) {
     console.error('Get meal sessions error:', error);
     return internalServerError('Failed to fetch meal sessions', error.message);
@@ -69,10 +110,14 @@ export async function POST(request: NextRequest) {
       name,
       code,
       description,
+      mealType,
       startTime,
       endTime,
       isOvertimeMeal,
       eligibleShifts,
+      allowedShifts,
+      allowedDepartments,
+      maxCapacity,
       displayOrder,
     } = body;
 
@@ -97,17 +142,27 @@ export async function POST(request: NextRequest) {
       name,
       code: code.toUpperCase(),
       description,
+      mealType: mealType || 'LUNCH',
       startTime,
       endTime,
-      isOvertimeMeal: isOvertimeMeal || false,
-      eligibleShifts: eligibleShifts || [],
+      isOvertimeMeal: isOvertimeMeal || mealType === 'OVERTIME_MEAL',
+      eligibleShifts: allowedShifts || eligibleShifts || [],
+      allowedDepartments: allowedDepartments || [],
+      maxCapacity: maxCapacity || 0,
       displayOrder: displayOrder || 0,
       status: 'ACTIVE',
     });
 
     await session.save();
 
-    return createdResponse(session);
+    // Transform response to match frontend expectations
+    const responseData = {
+      ...session.toObject(),
+      isActive: session.status === 'ACTIVE',
+      allowedShifts: session.eligibleShifts,
+    };
+
+    return createdResponse(responseData);
   } catch (error: any) {
     console.error('Create meal session error:', error);
     return internalServerError('Failed to create meal session', error.message);

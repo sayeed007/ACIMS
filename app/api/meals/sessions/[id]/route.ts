@@ -26,7 +26,10 @@ export async function GET(
     const session = await MealSession.findOne({
       _id: id,
       isDeleted: false,
-    }).lean();
+    })
+      .populate('eligibleShifts', 'name code')
+      .populate('allowedDepartments', 'name code')
+      .lean();
 
     if (!session) {
       return NextResponse.json(
@@ -35,7 +38,14 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(successResponse(session));
+    // Transform data to match frontend expectations
+    const transformedSession = {
+      ...session,
+      isActive: session.status === 'ACTIVE',
+      allowedShifts: session.eligibleShifts?.map((s: any) => s._id?.toString() || s) || [],
+    };
+
+    return NextResponse.json(successResponse(transformedSession));
   } catch (error: any) {
     console.error('Get meal session error:', error);
     return NextResponse.json(
@@ -65,11 +75,38 @@ export async function PUT(
     const body = await request.json();
     await connectDB();
 
+    // Transform frontend fields to backend fields
+    const updateData: any = { ...body };
+
+    // Handle isActive -> status conversion
+    if ('isActive' in body) {
+      updateData.status = body.isActive ? 'ACTIVE' : 'INACTIVE';
+      delete updateData.isActive;
+    }
+
+    // Handle allowedShifts -> eligibleShifts conversion
+    if ('allowedShifts' in body) {
+      updateData.eligibleShifts = body.allowedShifts;
+      delete updateData.allowedShifts;
+    }
+
+    // Update mealType and adjust isOvertimeMeal accordingly
+    if (updateData.mealType === 'OVERTIME_MEAL') {
+      updateData.isOvertimeMeal = true;
+    } else if ('mealType' in updateData) {
+      updateData.isOvertimeMeal = false;
+    }
+
+    updateData.updatedAt = new Date();
+
     const session = await MealSession.findOneAndUpdate(
       { _id: id, isDeleted: false },
-      { ...body, updatedAt: new Date() },
+      updateData,
       { new: true, runValidators: true }
-    ).lean();
+    )
+      .populate('eligibleShifts', 'name code')
+      .populate('allowedDepartments', 'name code')
+      .lean();
 
     if (!session) {
       return NextResponse.json(
@@ -78,7 +115,14 @@ export async function PUT(
       );
     }
 
-    return NextResponse.json(successResponse(session));
+    // Transform response to match frontend expectations
+    const transformedSession = {
+      ...session,
+      isActive: session.status === 'ACTIVE',
+      allowedShifts: session.eligibleShifts?.map((s: any) => s._id?.toString() || s) || [],
+    };
+
+    return NextResponse.json(successResponse(transformedSession));
   } catch (error: any) {
     console.error('Update meal session error:', error);
 

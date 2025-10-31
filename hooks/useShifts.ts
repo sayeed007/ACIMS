@@ -88,6 +88,7 @@ export function useCreateShift() {
     onSuccess: () => {
       toast.success('Shift created successfully!');
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['shift-stats'] });
     },
     onError: (error: any) => {
       const message = error.response?.data?.error?.message || 'Failed to create shift';
@@ -109,6 +110,7 @@ export function useUpdateShift() {
       toast.success('Shift updated successfully!');
       queryClient.invalidateQueries({ queryKey: ['shift', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['shift-stats'] });
     },
     onError: (error: any) => {
       const message = error.response?.data?.error?.message || 'Failed to update shift';
@@ -128,6 +130,7 @@ export function useDeleteShift() {
     onSuccess: () => {
       toast.success('Shift deleted successfully!');
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['shift-stats'] });
     },
     onError: (error: any) => {
       const message = error.response?.data?.error?.message || 'Failed to delete shift';

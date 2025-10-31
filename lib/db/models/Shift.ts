@@ -4,8 +4,19 @@ export interface IShift extends Document {
   _id: Types.ObjectId;
   name: string;
   code: string;
+  description?: string;
   startTime: string;
   endTime: string;
+  gracePeriod?: {
+    entry: number;
+    exit: number;
+  };
+  mealEligibility: {
+    breakfast: boolean;
+    lunch: boolean;
+    dinner: boolean;
+    snacks: boolean;
+  };
   eligibleMealSessions: Types.ObjectId[];
   overtimeThreshold?: number;
   status: 'ACTIVE' | 'INACTIVE';
@@ -27,6 +38,10 @@ const shiftSchema = new Schema<IShift>(
       unique: true,
       uppercase: true,
     },
+    description: {
+      type: String,
+      trim: true,
+    },
     startTime: {
       type: String,
       required: [true, 'Start time is required'],
@@ -36,6 +51,34 @@ const shiftSchema = new Schema<IShift>(
       type: String,
       required: [true, 'End time is required'],
       match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format (HH:mm)'],
+    },
+    gracePeriod: {
+      entry: {
+        type: Number,
+        default: 15,
+      },
+      exit: {
+        type: Number,
+        default: 15,
+      },
+    },
+    mealEligibility: {
+      breakfast: {
+        type: Boolean,
+        default: true,
+      },
+      lunch: {
+        type: Boolean,
+        default: true,
+      },
+      dinner: {
+        type: Boolean,
+        default: false,
+      },
+      snacks: {
+        type: Boolean,
+        default: false,
+      },
     },
     eligibleMealSessions: [{
       type: Schema.Types.ObjectId,

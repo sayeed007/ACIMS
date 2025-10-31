@@ -1,5 +1,4 @@
 import mongoose from 'mongoose'
-import bcrypt from 'bcryptjs'
 import connectDB from './mongoose'
 import User from './models/User'
 import Employee from './models/Employee'
@@ -10,6 +9,16 @@ import InventoryItem from './models/InventoryItem'
 import StockMovement from './models/StockMovement'
 import Reconciliation from './models/Reconciliation'
 import Vendor from './models/Vendor'
+import Device from './models/Device'
+import EmployeeAttendance from './models/EmployeeAttendance'
+import MealTransaction from './models/MealTransaction'
+import EligibilityRule from './models/EligibilityRule'
+import AccessControlRule from './models/AccessControlRule'
+import PurchaseDemand from './models/PurchaseDemand'
+import PurchaseOrder from './models/PurchaseOrder'
+import Bill from './models/Bill'
+import Notification from './models/Notification'
+import AuditLog from './models/AuditLog'
 
 async function seed() {
   try {
@@ -28,17 +37,174 @@ async function seed() {
     await StockMovement.deleteMany({})
     await Reconciliation.deleteMany({})
     await Vendor.deleteMany({})
+    await Device.deleteMany({})
+    await EmployeeAttendance.deleteMany({})
+    await MealTransaction.deleteMany({})
+    await EligibilityRule.deleteMany({})
+    await AccessControlRule.deleteMany({})
+    await PurchaseDemand.deleteMany({})
+    await PurchaseOrder.deleteMany({})
+    await Bill.deleteMany({})
+    await Notification.deleteMany({})
+    await AuditLog.deleteMany({})
 
     // Create Admin User
     console.log('👤 Creating admin user...')
-    const hashedPassword = await bcrypt.hash('admin123', 10)
     const adminUser = await User.create({
       name: 'Admin User',
       email: 'admin@acims.com',
-      password: hashedPassword,
+      password: 'admin123',
       role: 'SUPER_ADMIN',
       status: 'ACTIVE',
     })
+
+    // Create Additional Users
+    console.log('👥 Creating additional users...')
+    const managerUser = await User.create({
+      name: 'Manager User',
+      email: 'manager@acims.com',
+      password: 'manager123',
+      role: 'ADMIN',
+      status: 'ACTIVE',
+    })
+
+    const storeUser = await User.create({
+      name: 'Store Keeper',
+      email: 'store@acims.com',
+      password: 'store123',
+      role: 'USER',
+      status: 'ACTIVE',
+    })
+
+    // Create Access Control Rules
+    console.log('🔐 Creating access control rules...')
+    const accessRules = await AccessControlRule.insertMany([
+      {
+        roleName: 'SUPER_ADMIN',
+        description: 'Full system access with all permissions',
+        permissions: [
+          'employees:view', 'employees:create', 'employees:update', 'employees:delete',
+          'departments:view', 'departments:create', 'departments:update', 'departments:delete',
+          'shifts:view', 'shifts:create', 'shifts:update', 'shifts:delete',
+          'meals:view', 'meals:create', 'meals:update', 'meals:delete',
+          'meal-sessions:view', 'meal-sessions:create', 'meal-sessions:update', 'meal-sessions:delete',
+          'inventory:view', 'inventory:create', 'inventory:update', 'inventory:delete',
+          'procurement:view', 'procurement:create', 'procurement:update', 'procurement:delete',
+          'reports:view', 'reports:export',
+          'settings:view', 'settings:update',
+          'users:view', 'users:create', 'users:update', 'users:delete',
+          'eligibility:view', 'eligibility:create', 'eligibility:update', 'eligibility:delete',
+          'approve:demands', 'approve:reconciliations', 'approve:guest-meals',
+        ],
+        moduleAccess: {
+          dashboard: true,
+          employees: true,
+          departments: true,
+          shifts: true,
+          mealSessions: true,
+          mealTransactions: true,
+          inventory: true,
+          procurement: true,
+          reports: true,
+          settings: true,
+          eligibility: true,
+        },
+        dataScope: {
+          type: 'ALL',
+        },
+        restrictions: {
+          canExport: true,
+          canDelete: true,
+          canApprove: true,
+        },
+        isSystemRole: true,
+        isActive: true,
+        createdBy: {
+          id: adminUser._id,
+          name: adminUser.name,
+          email: adminUser.email,
+        },
+        isDeleted: false,
+      },
+      {
+        roleName: 'MANAGER',
+        description: 'Manager role with approval permissions',
+        permissions: [
+          'employees:view', 'departments:view', 'shifts:view',
+          'meals:view', 'meal-sessions:view',
+          'inventory:view', 'procurement:view', 'procurement:create',
+          'reports:view', 'reports:export',
+          'approve:demands', 'approve:reconciliations',
+        ],
+        moduleAccess: {
+          dashboard: true,
+          employees: true,
+          departments: true,
+          shifts: true,
+          mealSessions: true,
+          mealTransactions: true,
+          inventory: true,
+          procurement: true,
+          reports: true,
+          settings: false,
+          eligibility: true,
+        },
+        dataScope: {
+          type: 'ALL',
+        },
+        restrictions: {
+          canExport: true,
+          canDelete: false,
+          canApprove: true,
+        },
+        isSystemRole: false,
+        isActive: true,
+        createdBy: {
+          id: adminUser._id,
+          name: adminUser.name,
+          email: adminUser.email,
+        },
+        isDeleted: false,
+      },
+      {
+        roleName: 'STORE_KEEPER',
+        description: 'Store keeper with inventory management access',
+        permissions: [
+          'inventory:view', 'inventory:create', 'inventory:update',
+          'procurement:view',
+          'reports:view',
+        ],
+        moduleAccess: {
+          dashboard: true,
+          employees: false,
+          departments: false,
+          shifts: false,
+          mealSessions: false,
+          mealTransactions: false,
+          inventory: true,
+          procurement: true,
+          reports: true,
+          settings: false,
+          eligibility: false,
+        },
+        dataScope: {
+          type: 'OWN',
+        },
+        restrictions: {
+          canExport: false,
+          canDelete: false,
+          canApprove: false,
+        },
+        isSystemRole: false,
+        isActive: true,
+        createdBy: {
+          id: adminUser._id,
+          name: adminUser.name,
+          email: adminUser.email,
+        },
+        isDeleted: false,
+      },
+    ])
 
     // Create Departments
     console.log('🏢 Creating departments...')
@@ -97,6 +263,155 @@ async function seed() {
         startTime: '22:00',
         endTime: '06:00',
         status: 'ACTIVE',
+      },
+    ])
+
+    // Create Meal Sessions
+    console.log('🍽️  Creating meal sessions...')
+    const mealSessions = await MealSession.insertMany([
+      {
+        name: 'Breakfast',
+        code: 'BKF',
+        mealType: 'BREAKFAST',
+        startTime: '07:00',
+        endTime: '09:00',
+        description: 'Morning breakfast service',
+        status: 'ACTIVE',
+        displayOrder: 1,
+        maxCapacity: 100,
+      },
+      {
+        name: 'Lunch',
+        code: 'LUN',
+        mealType: 'LUNCH',
+        startTime: '12:00',
+        endTime: '14:00',
+        description: 'Afternoon lunch service',
+        status: 'ACTIVE',
+        displayOrder: 2,
+        maxCapacity: 150,
+      },
+      {
+        name: 'Dinner',
+        code: 'DIN',
+        mealType: 'DINNER',
+        startTime: '19:00',
+        endTime: '21:00',
+        description: 'Evening dinner service',
+        status: 'ACTIVE',
+        displayOrder: 3,
+        maxCapacity: 120,
+      },
+    ])
+
+    // Create Eligibility Rules
+    console.log('📋 Creating eligibility rules...')
+    const eligibilityRules = await EligibilityRule.insertMany([
+      {
+        ruleName: 'Morning Shift - Breakfast',
+        description: 'Morning shift employees are eligible for breakfast',
+        mealSession: {
+          id: mealSessions[0]._id,
+          name: mealSessions[0].name,
+        },
+        applicableFor: {
+          shifts: [shifts[0]._id],
+          employeeTypes: ['PERMANENT', 'CONTRACT', 'VENDOR'],
+        },
+        timeWindow: {
+          startTime: '07:00',
+          endTime: '09:00',
+        },
+        requiresAttendance: true,
+        requiresOT: false,
+        priority: 10,
+        isActive: true,
+        createdBy: {
+          id: adminUser._id,
+          name: adminUser.name,
+          email: adminUser.email,
+        },
+        isDeleted: false,
+      },
+      {
+        ruleName: 'All Shifts - Lunch',
+        description: 'All employees are eligible for lunch',
+        mealSession: {
+          id: mealSessions[1]._id,
+          name: mealSessions[1].name,
+        },
+        applicableFor: {
+          shifts: [shifts[0]._id, shifts[1]._id, shifts[2]._id],
+          employeeTypes: ['PERMANENT', 'CONTRACT', 'VENDOR'],
+        },
+        timeWindow: {
+          startTime: '12:00',
+          endTime: '14:00',
+        },
+        requiresAttendance: true,
+        requiresOT: false,
+        priority: 10,
+        isActive: true,
+        createdBy: {
+          id: adminUser._id,
+          name: adminUser.name,
+          email: adminUser.email,
+        },
+        isDeleted: false,
+      },
+      {
+        ruleName: 'Evening/Night Shift - Dinner',
+        description: 'Evening and night shift employees are eligible for dinner',
+        mealSession: {
+          id: mealSessions[2]._id,
+          name: mealSessions[2].name,
+        },
+        applicableFor: {
+          shifts: [shifts[1]._id, shifts[2]._id],
+          employeeTypes: ['PERMANENT', 'CONTRACT', 'VENDOR'],
+        },
+        timeWindow: {
+          startTime: '19:00',
+          endTime: '21:00',
+        },
+        requiresAttendance: true,
+        requiresOT: false,
+        priority: 10,
+        isActive: true,
+        createdBy: {
+          id: adminUser._id,
+          name: adminUser.name,
+          email: adminUser.email,
+        },
+        isDeleted: false,
+      },
+      {
+        ruleName: 'Overtime - Dinner',
+        description: 'Employees with approved OT get dinner',
+        mealSession: {
+          id: mealSessions[2]._id,
+          name: mealSessions[2].name,
+        },
+        applicableFor: {
+          employeeTypes: ['PERMANENT', 'CONTRACT'],
+        },
+        timeWindow: {
+          startTime: '19:00',
+          endTime: '22:00',
+        },
+        requiresAttendance: true,
+        requiresOT: true,
+        priority: 20,
+        conditions: {
+          minWorkHours: 10,
+        },
+        isActive: true,
+        createdBy: {
+          id: adminUser._id,
+          name: adminUser.name,
+          email: adminUser.email,
+        },
+        isDeleted: false,
       },
     ])
 
@@ -184,37 +499,366 @@ async function seed() {
         },
         createdBy: adminUser._id,
       },
+      {
+        employeeId: 'EMP004',
+        name: 'Sunita Reddy',
+        email: 'sunita.reddy@acims.com',
+        phone: '+91 98765 43213',
+        department: {
+          id: departments[0]._id,
+          name: departments[0].name,
+        },
+        shift: {
+          id: shifts[1]._id,
+          name: shifts[1].name,
+        },
+        employmentType: 'CONTRACT',
+        designation: 'Cook',
+        joiningDate: new Date('2024-01-10'),
+        status: 'ACTIVE',
+        hrmsData: {
+          systemType: 'VENDOR_HRMS',
+          externalId: 'VHRMS-EMP004',
+        },
+        biometricData: {
+          faceTemplateId: 'BIO004',
+          faceDataSynced: false,
+        },
+        createdBy: adminUser._id,
+      },
+      {
+        employeeId: 'EMP005',
+        name: 'Vikram Singh',
+        email: 'vikram.singh@acims.com',
+        phone: '+91 98765 43214',
+        department: {
+          id: departments[1]._id,
+          name: departments[1].name,
+        },
+        shift: {
+          id: shifts[1]._id,
+          name: shifts[1].name,
+        },
+        employmentType: 'CONTRACT',
+        designation: 'Service Staff',
+        joiningDate: new Date('2024-02-01'),
+        status: 'ACTIVE',
+        hrmsData: {
+          systemType: 'VENDOR_HRMS',
+          externalId: 'VHRMS-EMP005',
+        },
+        biometricData: {
+          faceTemplateId: 'BIO005',
+          faceDataSynced: false,
+        },
+        createdBy: adminUser._id,
+      },
     ])
 
-    // Create Meal Sessions
-    console.log('🍽️  Creating meal sessions...')
-    const mealSessions = await MealSession.insertMany([
+    // Create Devices
+    console.log('📱 Creating devices...')
+    const devices = await Device.insertMany([
       {
-        name: 'Breakfast',
-        code: 'BKF',
-        startTime: '07:00',
-        endTime: '09:00',
-        description: 'Morning breakfast service',
-        status: 'ACTIVE',
-        displayOrder: 1,
+        deviceId: 'DEV001',
+        deviceName: 'Cafeteria Main Entrance',
+        deviceType: 'FACE_RECOGNITION',
+        location: 'Main Cafeteria - Entrance',
+        ipAddress: '192.168.1.100',
+        macAddress: '00:1B:44:11:3A:B7',
+        manufacturer: 'Hikvision',
+        deviceModel: 'DS-K1T341AMF',
+        firmwareVersion: 'V3.2.5',
+        status: 'ONLINE',
+        lastHeartbeat: new Date(),
+        configuration: {
+          verificationThreshold: 85,
+          timeout: 30,
+          displaySettings: {
+            showName: true,
+            showPhoto: true,
+          },
+        },
+        statistics: {
+          totalVerifications: 1250,
+          successfulVerifications: 1180,
+          failedVerifications: 70,
+          lastVerificationAt: new Date(),
+        },
+        isDeleted: false,
       },
       {
-        name: 'Lunch',
-        code: 'LUN',
-        startTime: '12:00',
-        endTime: '14:00',
-        description: 'Afternoon lunch service',
-        status: 'ACTIVE',
-        displayOrder: 2,
+        deviceId: 'DEV002',
+        deviceName: 'Cafeteria Exit Scanner',
+        deviceType: 'BARCODE_SCANNER',
+        location: 'Main Cafeteria - Exit',
+        ipAddress: '192.168.1.101',
+        status: 'ONLINE',
+        lastHeartbeat: new Date(),
+        statistics: {
+          totalVerifications: 850,
+          successfulVerifications: 830,
+          failedVerifications: 20,
+          lastVerificationAt: new Date(),
+        },
+        isDeleted: false,
       },
       {
-        name: 'Dinner',
-        code: 'DIN',
-        startTime: '19:00',
-        endTime: '21:00',
-        description: 'Evening dinner service',
-        status: 'ACTIVE',
-        displayOrder: 3,
+        deviceId: 'DEV003',
+        deviceName: 'Admin Block Kiosk',
+        deviceType: 'KIOSK',
+        location: 'Admin Block - Floor 2',
+        ipAddress: '192.168.1.102',
+        status: 'OFFLINE',
+        configuration: {
+          timeout: 60,
+        },
+        statistics: {
+          totalVerifications: 320,
+          successfulVerifications: 315,
+          failedVerifications: 5,
+        },
+        isDeleted: false,
+      },
+    ])
+
+    // Create Employee Attendance
+    console.log('📅 Creating employee attendance records...')
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+
+    const attendanceRecords = await EmployeeAttendance.insertMany([
+      // Today's attendance
+      {
+        employeeId: employees[0]._id,
+        employee: {
+          id: employees[0].employeeId,
+          name: employees[0].name,
+        },
+        date: today,
+        shift: {
+          id: shifts[0]._id,
+          name: shifts[0].name,
+        },
+        status: 'PRESENT',
+        checkIn: new Date(today.setHours(6, 15)),
+        checkOut: new Date(today.setHours(14, 10)),
+        overtimeHours: 0,
+        isOTApproved: false,
+        syncedFrom: 'PERMANENT_HRMS',
+        lastSyncedAt: new Date(),
+      },
+      {
+        employeeId: employees[1]._id,
+        employee: {
+          id: employees[1].employeeId,
+          name: employees[1].name,
+        },
+        date: today,
+        shift: {
+          id: shifts[0]._id,
+          name: shifts[0].name,
+        },
+        status: 'PRESENT',
+        checkIn: new Date(today.setHours(6, 10)),
+        checkOut: new Date(today.setHours(14, 5)),
+        overtimeHours: 0,
+        isOTApproved: false,
+        syncedFrom: 'PERMANENT_HRMS',
+        lastSyncedAt: new Date(),
+      },
+      {
+        employeeId: employees[2]._id,
+        employee: {
+          id: employees[2].employeeId,
+          name: employees[2].name,
+        },
+        date: today,
+        shift: {
+          id: shifts[0]._id,
+          name: shifts[0].name,
+        },
+        status: 'PRESENT',
+        checkIn: new Date(today.setHours(6, 20)),
+        overtimeHours: 0,
+        isOTApproved: false,
+        syncedFrom: 'PERMANENT_HRMS',
+        lastSyncedAt: new Date(),
+      },
+      {
+        employeeId: employees[3]._id,
+        employee: {
+          id: employees[3].employeeId,
+          name: employees[3].name,
+        },
+        date: today,
+        shift: {
+          id: shifts[1]._id,
+          name: shifts[1].name,
+        },
+        status: 'PRESENT',
+        checkIn: new Date(today.setHours(14, 5)),
+        overtimeHours: 2,
+        isOTApproved: true,
+        syncedFrom: 'VENDOR_HRMS',
+        lastSyncedAt: new Date(),
+      },
+      {
+        employeeId: employees[4]._id,
+        employee: {
+          id: employees[4].employeeId,
+          name: employees[4].name,
+        },
+        date: today,
+        shift: {
+          id: shifts[1]._id,
+          name: shifts[1].name,
+        },
+        status: 'LATE',
+        checkIn: new Date(today.setHours(14, 35)),
+        overtimeHours: 0,
+        isOTApproved: false,
+        syncedFrom: 'VENDOR_HRMS',
+        lastSyncedAt: new Date(),
+      },
+      // Yesterday's attendance
+      {
+        employeeId: employees[0]._id,
+        employee: {
+          id: employees[0].employeeId,
+          name: employees[0].name,
+        },
+        date: yesterday,
+        shift: {
+          id: shifts[0]._id,
+          name: shifts[0].name,
+        },
+        status: 'PRESENT',
+        checkIn: new Date(yesterday.setHours(6, 10)),
+        checkOut: new Date(yesterday.setHours(14, 5)),
+        overtimeHours: 0,
+        isOTApproved: false,
+        syncedFrom: 'PERMANENT_HRMS',
+        lastSyncedAt: new Date(),
+      },
+    ])
+
+    // Create Meal Transactions
+    console.log('🍴 Creating meal transactions...')
+    const mealTransactions = await MealTransaction.insertMany([
+      {
+        transactionId: `TXN${Date.now()}001`,
+        date: today,
+        mealSession: {
+          id: mealSessions[0]._id,
+          name: mealSessions[0].name,
+          code: mealSessions[0].code,
+        },
+        employee: {
+          id: employees[0]._id,
+          employeeId: employees[0].employeeId,
+          name: employees[0].name,
+        },
+        department: {
+          id: departments[0]._id,
+          name: departments[0].name,
+        },
+        shift: {
+          id: shifts[0]._id,
+          name: shifts[0].name,
+        },
+        device: {
+          id: devices[0].deviceId,
+          name: devices[0].deviceName,
+          location: devices[0].location,
+        },
+        verificationMethod: 'FACE_RECOGNITION',
+        verificationStatus: 'AUTHORIZED',
+        verificationConfidence: 95.5,
+        eligibilityCheck: {
+          wasEligible: true,
+          attendanceStatus: 'PRESENT',
+          shiftMatch: true,
+        },
+        isGuestMeal: false,
+        timestamp: new Date(today.setHours(7, 30)),
+        isDeleted: false,
+      },
+      {
+        transactionId: `TXN${Date.now()}002`,
+        date: today,
+        mealSession: {
+          id: mealSessions[0]._id,
+          name: mealSessions[0].name,
+          code: mealSessions[0].code,
+        },
+        employee: {
+          id: employees[1]._id,
+          employeeId: employees[1].employeeId,
+          name: employees[1].name,
+        },
+        department: {
+          id: departments[1]._id,
+          name: departments[1].name,
+        },
+        shift: {
+          id: shifts[0]._id,
+          name: shifts[0].name,
+        },
+        device: {
+          id: devices[0].deviceId,
+          name: devices[0].deviceName,
+          location: devices[0].location,
+        },
+        verificationMethod: 'FACE_RECOGNITION',
+        verificationStatus: 'AUTHORIZED',
+        verificationConfidence: 92.3,
+        eligibilityCheck: {
+          wasEligible: true,
+          attendanceStatus: 'PRESENT',
+          shiftMatch: true,
+        },
+        isGuestMeal: false,
+        timestamp: new Date(today.setHours(7, 45)),
+        isDeleted: false,
+      },
+      {
+        transactionId: `TXN${Date.now()}003`,
+        date: today,
+        mealSession: {
+          id: mealSessions[1]._id,
+          name: mealSessions[1].name,
+          code: mealSessions[1].code,
+        },
+        employee: {
+          id: employees[2]._id,
+          employeeId: employees[2].employeeId,
+          name: employees[2].name,
+        },
+        department: {
+          id: departments[2]._id,
+          name: departments[2].name,
+        },
+        shift: {
+          id: shifts[0]._id,
+          name: shifts[0].name,
+        },
+        device: {
+          id: devices[0].deviceId,
+          name: devices[0].deviceName,
+          location: devices[0].location,
+        },
+        verificationMethod: 'FACE_RECOGNITION',
+        verificationStatus: 'AUTHORIZED',
+        verificationConfidence: 88.7,
+        eligibilityCheck: {
+          wasEligible: true,
+          attendanceStatus: 'PRESENT',
+          shiftMatch: true,
+        },
+        isGuestMeal: false,
+        timestamp: new Date(today.setHours(12, 15)),
+        isDeleted: false,
       },
     ])
 
@@ -331,7 +975,6 @@ async function seed() {
 
     // Create Inventory Items
     console.log('📦 Creating inventory items...')
-    // Create category IDs for seed data (in real app, these would come from InventoryCategory collection)
     const categoryGrains = new mongoose.Types.ObjectId()
     const categoryOils = new mongoose.Types.ObjectId()
     const categoryVegetables = new mongoose.Types.ObjectId()
@@ -537,21 +1180,413 @@ async function seed() {
       },
     ])
 
+    // Create Purchase Demands
+    console.log('📝 Creating purchase demands...')
+    const purchaseDemands = await PurchaseDemand.insertMany([
+      {
+        demandNumber: 'PD-2024-001',
+        demandDate: new Date('2024-10-28'),
+        requiredByDate: new Date('2024-11-05'),
+        generationType: 'MANUAL',
+        items: [
+          {
+            item: {
+              id: inventoryItems[0]._id,
+              itemCode: inventoryItems[0].itemCode,
+              name: inventoryItems[0].name,
+            },
+            currentStock: 500,
+            requiredQuantity: 100,
+            demandedQuantity: 200,
+            unit: 'KG',
+            suggestedVendors: [vendors[0]._id],
+            remarks: 'Regular monthly stock',
+          },
+          {
+            item: {
+              id: inventoryItems[4]._id,
+              itemCode: inventoryItems[4].itemCode,
+              name: inventoryItems[4].name,
+            },
+            currentStock: 20,
+            requiredQuantity: 10,
+            demandedQuantity: 15,
+            unit: 'KG',
+            suggestedVendors: [vendors[1]._id],
+          },
+        ],
+        createdBy: {
+          id: storeUser._id,
+          name: storeUser.name,
+          email: storeUser.email,
+        },
+        approvalWorkflow: [
+          {
+            approver: {
+              id: managerUser._id,
+              name: managerUser.name,
+              role: 'ADMIN',
+            },
+            status: 'APPROVED',
+            approvedAt: new Date('2024-10-29'),
+            comments: 'Approved for procurement',
+          },
+        ],
+        finalStatus: 'APPROVED',
+        notes: 'Regular monthly demand',
+        isDeleted: false,
+      },
+      {
+        demandNumber: 'PD-2024-002',
+        demandDate: new Date('2024-10-30'),
+        requiredByDate: new Date('2024-11-08'),
+        generationType: 'AUTO',
+        basedOnCommitments: {
+          startDate: new Date('2024-11-01'),
+          endDate: new Date('2024-11-30'),
+          mealSessions: [mealSessions[0]._id, mealSessions[1]._id],
+        },
+        items: [
+          {
+            item: {
+              id: inventoryItems[1]._id,
+              itemCode: inventoryItems[1].itemCode,
+              name: inventoryItems[1].name,
+            },
+            currentStock: 150,
+            requiredQuantity: 100,
+            demandedQuantity: 150,
+            unit: 'LITER',
+            suggestedVendors: [vendors[0]._id],
+          },
+        ],
+        createdBy: {
+          id: adminUser._id,
+          name: adminUser.name,
+          email: adminUser.email,
+        },
+        approvalWorkflow: [
+          {
+            approver: {
+              id: managerUser._id,
+              name: managerUser.name,
+              role: 'ADMIN',
+            },
+            status: 'PENDING',
+          },
+        ],
+        finalStatus: 'SUBMITTED',
+        notes: 'Auto-generated based on meal commitments',
+        isDeleted: false,
+      },
+    ])
+
+    // Create Purchase Orders
+    console.log('📋 Creating purchase orders...')
+    const purchaseOrders = await PurchaseOrder.insertMany([
+      {
+        poNumber: 'PO-2024-001',
+        poDate: new Date('2024-10-29'),
+        demandListReference: purchaseDemands[0]._id,
+        vendor: {
+          id: vendors[0]._id,
+          vendorCode: vendors[0].vendorCode,
+          name: vendors[0].name,
+          contact: vendors[0].contactPerson.phone,
+        },
+        deliveryDate: new Date('2024-11-05'),
+        deliveryAddress: 'Main Store, ACIMS Campus',
+        items: [
+          {
+            item: {
+              id: inventoryItems[0]._id,
+              itemCode: inventoryItems[0].itemCode,
+              name: inventoryItems[0].name,
+            },
+            quantity: 200,
+            unit: 'KG',
+            ratePerUnit: 85,
+            taxPercent: 5,
+            taxAmount: 850,
+            totalAmount: 17850,
+            receivedQuantity: 0,
+            pendingQuantity: 200,
+          },
+        ],
+        subtotal: 17000,
+        totalTax: 850,
+        totalAmount: 17850,
+        paymentTerms: 'Net 30 days',
+        createdBy: {
+          id: storeUser._id,
+          name: storeUser.name,
+          email: storeUser.email,
+        },
+        approvedBy: {
+          id: managerUser._id,
+          name: managerUser.name,
+          approvedAt: new Date('2024-10-29'),
+        },
+        status: 'APPROVED',
+        fulfilmentStatus: {
+          receiptsGenerated: 0,
+          totalReceived: 0,
+          pendingAmount: 17850,
+        },
+        notes: 'Deliver to main store between 8 AM - 12 PM',
+        isDeleted: false,
+      },
+    ])
+
+    // Create Bills
+    console.log('💰 Creating bills...')
+    const bills = await Bill.insertMany([
+      {
+        billNumber: 'BILL-2024-001',
+        billDate: new Date('2024-10-20'),
+        dueDate: new Date('2024-11-19'),
+        vendor: {
+          id: vendors[0]._id,
+          vendorCode: vendors[0].vendorCode,
+          name: vendors[0].name,
+        },
+        purchaseOrderReference: purchaseOrders[0]._id,
+        items: [
+          {
+            description: 'Basmati Rice - 200 KG',
+            item: {
+              id: inventoryItems[0]._id,
+              itemCode: inventoryItems[0].itemCode,
+              name: inventoryItems[0].name,
+            },
+            quantity: 200,
+            unit: 'KG',
+            rate: 85,
+            amount: 17000,
+          },
+        ],
+        subtotal: 17000,
+        tax: 850,
+        totalAmount: 17850,
+        paidAmount: 0,
+        balanceAmount: 17850,
+        enteredBy: {
+          id: storeUser._id,
+          name: storeUser.name,
+          email: storeUser.email,
+        },
+        verifiedBy: {
+          id: managerUser._id,
+          name: managerUser.name,
+          verifiedAt: new Date('2024-10-21'),
+        },
+        paymentStatus: 'UNPAID',
+        status: 'APPROVED',
+        notes: 'Payment to be made via NEFT',
+        isDeleted: false,
+      },
+    ])
+
+    // Create Notifications
+    console.log('🔔 Creating notifications...')
+    const notifications = await Notification.insertMany([
+      {
+        recipient: {
+          id: adminUser._id,
+          name: adminUser.name,
+          email: adminUser.email,
+        },
+        type: 'INFO',
+        category: 'SYSTEM',
+        title: 'System Initialized',
+        message: 'The food management system has been successfully initialized with seed data.',
+        metadata: {
+          referenceType: 'SYSTEM',
+        },
+        channels: {
+          inApp: true,
+          email: false,
+          sms: false,
+        },
+        deliveryStatus: {
+          inApp: 'DELIVERED',
+        },
+      },
+      {
+        recipient: {
+          id: managerUser._id,
+          name: managerUser.name,
+          email: managerUser.email,
+        },
+        type: 'WARNING',
+        category: 'PROCUREMENT',
+        title: 'Purchase Demand Pending Approval',
+        message: 'Purchase demand PD-2024-002 is pending your approval.',
+        metadata: {
+          referenceType: 'PurchaseDemand',
+          referenceId: purchaseDemands[1]._id,
+          actionUrl: `/procurement/demands/${purchaseDemands[1]._id}`,
+        },
+        channels: {
+          inApp: true,
+          email: true,
+          sms: false,
+        },
+        deliveryStatus: {
+          inApp: 'DELIVERED',
+          email: 'PENDING',
+        },
+      },
+      {
+        recipient: {
+          id: storeUser._id,
+          name: storeUser.name,
+          email: storeUser.email,
+        },
+        type: 'ALERT',
+        category: 'INVENTORY',
+        title: 'Low Stock Alert',
+        message: 'Turmeric Powder stock is below reorder level.',
+        metadata: {
+          referenceType: 'InventoryItem',
+          referenceId: inventoryItems[4]._id,
+          actionUrl: `/inventory/items/${inventoryItems[4]._id}`,
+        },
+        channels: {
+          inApp: true,
+          email: true,
+          sms: false,
+        },
+        deliveryStatus: {
+          inApp: 'DELIVERED',
+          email: 'SENT',
+        },
+      },
+    ])
+
+    // Create Audit Logs
+    console.log('📜 Creating audit logs...')
+    const auditLogs = await AuditLog.insertMany([
+      {
+        user: {
+          id: adminUser._id,
+          email: adminUser.email,
+          name: adminUser.name,
+          role: 'SUPER_ADMIN',
+        },
+        action: 'CREATE',
+        resource: 'Department',
+        resourceId: departments[0]._id,
+        changes: [
+          {
+            field: 'name',
+            oldValue: null,
+            newValue: 'Kitchen',
+          },
+          {
+            field: 'code',
+            oldValue: null,
+            newValue: 'KIT',
+          },
+        ],
+        metadata: {
+          ip: '192.168.1.50',
+          userAgent: 'Mozilla/5.0',
+          method: 'POST',
+          endpoint: '/api/departments',
+        },
+        status: 'SUCCESS',
+        timestamp: new Date('2024-10-20T08:30:00'),
+      },
+      {
+        user: {
+          id: storeUser._id,
+          email: storeUser.email,
+          name: storeUser.name,
+          role: 'USER',
+        },
+        action: 'UPDATE',
+        resource: 'InventoryItem',
+        resourceId: inventoryItems[2]._id,
+        changes: [
+          {
+            field: 'currentStock',
+            oldValue: 100,
+            newValue: 75,
+          },
+        ],
+        metadata: {
+          ip: '192.168.1.51',
+          userAgent: 'Mozilla/5.0',
+          method: 'PUT',
+          endpoint: '/api/inventory/items',
+        },
+        status: 'SUCCESS',
+        timestamp: new Date('2024-10-25T14:20:00'),
+      },
+      {
+        user: {
+          id: managerUser._id,
+          email: managerUser.email,
+          name: managerUser.name,
+          role: 'ADMIN',
+        },
+        action: 'APPROVE',
+        resource: 'PurchaseDemand',
+        resourceId: purchaseDemands[0]._id,
+        changes: [
+          {
+            field: 'finalStatus',
+            oldValue: 'SUBMITTED',
+            newValue: 'APPROVED',
+          },
+        ],
+        metadata: {
+          ip: '192.168.1.52',
+          userAgent: 'Mozilla/5.0',
+          method: 'POST',
+          endpoint: '/api/procurement/demands/approve',
+        },
+        status: 'SUCCESS',
+        timestamp: new Date('2024-10-29T10:15:00'),
+      },
+    ])
+
     console.log('✅ Seed completed successfully!')
     console.log('')
     console.log('📝 Login Credentials:')
-    console.log('   Email: admin@acims.com')
-    console.log('   Password: admin123')
+    console.log('   Super Admin:')
+    console.log('     Email: admin@acims.com')
+    console.log('     Password: admin123')
+    console.log('')
+    console.log('   Manager:')
+    console.log('     Email: manager@acims.com')
+    console.log('     Password: manager123')
+    console.log('')
+    console.log('   Store Keeper:')
+    console.log('     Email: store@acims.com')
+    console.log('     Password: store123')
     console.log('')
     console.log('📊 Created:')
+    console.log(`   - ${3} Users`)
+    console.log(`   - ${accessRules.length} Access Control Rules`)
     console.log(`   - ${departments.length} Departments`)
     console.log(`   - ${shifts.length} Shifts`)
-    console.log(`   - ${employees.length} Employees`)
     console.log(`   - ${mealSessions.length} Meal Sessions`)
+    console.log(`   - ${eligibilityRules.length} Eligibility Rules`)
+    console.log(`   - ${employees.length} Employees`)
+    console.log(`   - ${devices.length} Devices`)
+    console.log(`   - ${attendanceRecords.length} Attendance Records`)
+    console.log(`   - ${mealTransactions.length} Meal Transactions`)
     console.log(`   - ${vendors.length} Vendors`)
     console.log(`   - ${inventoryItems.length} Inventory Items`)
     console.log(`   - ${stockMovements.length} Stock Movements`)
     console.log(`   - ${reconciliations.length} Reconciliations`)
+    console.log(`   - ${purchaseDemands.length} Purchase Demands`)
+    console.log(`   - ${purchaseOrders.length} Purchase Orders`)
+    console.log(`   - ${bills.length} Bills`)
+    console.log(`   - ${notifications.length} Notifications`)
+    console.log(`   - ${auditLogs.length} Audit Logs`)
     console.log('')
 
     process.exit(0)

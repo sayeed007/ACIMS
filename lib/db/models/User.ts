@@ -67,6 +67,7 @@ const userSchema = new Schema<IUser>(
         'STORE_KEEPER',
         'DEPARTMENT_HEAD',
         'PURCHASE_COMMITTEE',
+        'USER'
       ],
       required: [true, 'Role is required'],
     },

@@ -38,10 +38,11 @@ export default function EmployeesPage() {
 
   const { user, hasPermission } = useAuth()
 
-  // Fetch employees with search filter
+  // Fetch employees with search filter (fetch all statuses, not just ACTIVE)
   const { data, isLoading, error } = useEmployees({
-    search: searchQuery || undefined,
+    ...(searchQuery && { search: searchQuery }),
     limit: 50,
+    status: 'all', // Pass 'all' to get employees with all statuses
   })
 
   // Fetch employee statistics
@@ -235,7 +236,7 @@ export default function EmployeesPage() {
                     <TableCell>{employee.shift.name}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="capitalize">
-                        {employee.employeeType.replace('_', ' ').toLowerCase()}
+                        {employee.employmentType.replace('_', ' ').toLowerCase()}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -244,8 +245,8 @@ export default function EmployeesPage() {
                           employee.status === 'ACTIVE'
                             ? 'default'
                             : employee.status === 'INACTIVE'
-                            ? 'secondary'
-                            : 'destructive'
+                              ? 'secondary'
+                              : 'destructive'
                         }
                         className="capitalize"
                       >

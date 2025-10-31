@@ -244,7 +244,7 @@ export function ShiftFormDialog({
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="breakfast"
-                  checked={mealEligibility.breakfast}
+                  checked={mealEligibility?.breakfast}
                   onCheckedChange={(checked) =>
                     setMealEligibility((prev) => ({
                       ...prev,
@@ -263,7 +263,7 @@ export function ShiftFormDialog({
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="lunch"
-                  checked={mealEligibility.lunch}
+                  checked={mealEligibility?.lunch}
                   onCheckedChange={(checked) =>
                     setMealEligibility((prev) => ({
                       ...prev,
@@ -282,7 +282,7 @@ export function ShiftFormDialog({
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="dinner"
-                  checked={mealEligibility.dinner}
+                  checked={mealEligibility?.dinner}
                   onCheckedChange={(checked) =>
                     setMealEligibility((prev) => ({
                       ...prev,
@@ -301,7 +301,7 @@ export function ShiftFormDialog({
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="snacks"
-                  checked={mealEligibility.snacks}
+                  checked={mealEligibility?.snacks}
                   onCheckedChange={(checked) =>
                     setMealEligibility((prev) => ({
                       ...prev,

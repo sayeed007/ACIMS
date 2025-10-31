@@ -87,7 +87,7 @@ export default function LoginPage() {
 
             <div className="mt-4 text-center text-sm">
               <span className="text-muted-foreground">
-                Don't have an account?{' '}
+                {"Don't have an account? "}
               </span>
               <Link
                 href="/register"

@@ -9,30 +9,31 @@ export interface Employee {
   email?: string;
   phone?: string;
   department: {
-    _id: string;
+    id?: {
+      _id: string;
+      name: string;
+      code?: string;
+    };
     name: string;
-    code: string;
   };
   shift: {
-    _id: string;
+    id?: {
+      _id: string;
+      name: string;
+      code?: string;
+    };
     name: string;
-    code: string;
   };
   biometric?: {
     isActive: boolean;
     deviceId?: string;
     enrollmentId?: string;
   };
-  status: 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'TERMINATED';
-  employeeType: 'PERMANENT' | 'CONTRACT' | 'TEMPORARY' | 'VENDOR_STAFF';
-  dateOfJoining: string;
-  dateOfLeaving?: string;
-  bloodGroup?: string;
-  emergencyContact?: {
-    name: string;
-    relationship: string;
-    phone: string;
-  };
+  status: 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'SUSPENDED';
+  employmentType: 'PERMANENT' | 'CONTRACT' | 'TEMPORARY' | 'VENDOR';
+  designation?: string;
+  joiningDate: string;
+  exitDate?: string;
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
@@ -43,7 +44,7 @@ export interface EmployeeFilters {
   departmentId?: string;
   shiftId?: string;
   status?: string;
-  employeeType?: string;
+  employmentType?: string;
   page?: number;
   limit?: number;
 }
@@ -55,19 +56,14 @@ export interface CreateEmployeeData {
   phone?: string;
   departmentId: string;
   shiftId: string;
-  employeeType: 'PERMANENT' | 'CONTRACT' | 'TEMPORARY' | 'VENDOR_STAFF';
+  employmentType: 'PERMANENT' | 'CONTRACT' | 'TEMPORARY' | 'VENDOR';
   dateOfJoining: string;
-  bloodGroup?: string;
-  emergencyContact?: {
-    name: string;
-    relationship: string;
-    phone: string;
-  };
+  designation?: string;
 }
 
 export interface UpdateEmployeeData extends Partial<CreateEmployeeData> {
-  status?: 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'TERMINATED';
-  dateOfLeaving?: string;
+  status?: 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'SUSPENDED';
+  exitDate?: string;
 }
 
 /**
@@ -162,16 +158,16 @@ export function useEmployeeStats() {
     queryKey: ['employee-stats'],
     queryFn: async () => {
       // Fetch different employee counts in parallel
-      const [activeEmployees, contractEmployees, allEmployees] = await Promise.all([
+      const [activeEmployees, vendorEmployees, allEmployees] = await Promise.all([
         api.getEmployees({ status: 'ACTIVE' }),
-        api.getEmployees({ employeeType: 'VENDOR_STAFF' }),
-        api.getEmployees({}),
+        api.getEmployees({ employmentType: 'VENDOR', status: 'all' }),
+        api.getEmployees({ status: 'all' }), // Pass 'all' to get total count of all employees
       ]);
 
       return {
         total: allEmployees.meta?.pagination?.total || 0,
         active: activeEmployees.meta?.pagination?.total || 0,
-        contract: contractEmployees.meta?.pagination?.total || 0,
+        contract: vendorEmployees.meta?.pagination?.total || 0,
       };
     },
     staleTime: 60000, // 1 minute

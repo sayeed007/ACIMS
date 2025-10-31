@@ -5,10 +5,13 @@ export interface IMealSession extends Document {
   name: string;
   code: string;
   description?: string;
+  mealType: 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACKS' | 'OVERTIME_MEAL';
   startTime: string;
   endTime: string;
   isOvertimeMeal: boolean;
   eligibleShifts: Types.ObjectId[];
+  allowedDepartments?: Types.ObjectId[];
+  maxCapacity?: number;
   displayOrder: number;
   status: 'ACTIVE' | 'INACTIVE';
   isDeleted: boolean;
@@ -30,6 +33,12 @@ const mealSessionSchema = new Schema<IMealSession>(
       uppercase: true,
     },
     description: String,
+    mealType: {
+      type: String,
+      enum: ['BREAKFAST', 'LUNCH', 'DINNER', 'SNACKS', 'OVERTIME_MEAL'],
+      required: [true, 'Meal type is required'],
+      default: 'LUNCH',
+    },
     startTime: {
       type: String,
       required: [true, 'Start time is required'],
@@ -48,6 +57,14 @@ const mealSessionSchema = new Schema<IMealSession>(
       type: Schema.Types.ObjectId,
       ref: 'Shift',
     }],
+    allowedDepartments: [{
+      type: Schema.Types.ObjectId,
+      ref: 'Department',
+    }],
+    maxCapacity: {
+      type: Number,
+      default: 0,
+    },
     displayOrder: {
       type: Number,
       default: 0,

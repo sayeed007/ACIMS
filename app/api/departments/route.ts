@@ -8,6 +8,8 @@ import {
   conflictError,
   unauthorizedError,
   internalServerError,
+  getPaginationParams,
+  getPaginationMeta,
 } from '@/lib/utils/api-response';
 import { getCurrentUser } from '@/lib/utils/auth-helpers';
 
@@ -28,19 +30,38 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
+    const search = searchParams.get('search');
 
+    // Get pagination params
+    const { page, limit, skip } = getPaginationParams(searchParams);
+
+    // Build query
     const query: any = {};
     if (status) {
       query.status = status;
     }
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { code: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+      ];
+    }
 
+    // Get total count for pagination
+    const total = await Department.countDocuments(query);
+
+    // Fetch departments with pagination
     const departments = await Department.find(query)
       .populate('headOfDepartment', 'name email')
       .populate('parentDepartment', 'name code')
       .sort({ name: 1 })
+      .skip(skip)
+      .limit(limit)
       .lean();
 
-    return successResponse(departments);
+    // Return with pagination metadata
+    return successResponse(departments, getPaginationMeta({ page, limit, total }));
   } catch (error: any) {
     console.error('Get departments error:', error);
     return internalServerError('Failed to fetch departments', error.message);
@@ -66,7 +87,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, code, description, headOfDepartment, parentDepartment } = body;
+    const { name, code, description, location, costCenter, headOfDepartment, parentDepartment } = body;
 
     // Validation
     if (!name || !code) {
@@ -83,6 +104,8 @@ export async function POST(request: NextRequest) {
       name,
       code: code.toUpperCase(),
       description,
+      location,
+      costCenter,
       headOfDepartment,
       parentDepartment,
       status: 'ACTIVE',
