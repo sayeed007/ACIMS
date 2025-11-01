@@ -34,7 +34,7 @@ export default function PurchaseOrdersPage() {
   const { data: statsData, isLoading: statsLoading } = usePurchaseOrderStats()
 
   const orders = data?.data || []
-  const stats = statsData?.data || { total: 0, draft: 0, approved: 0, fullyReceived: 0 }
+  const stats = (statsData?.data as any) || { total: 0, draft: 0, approved: 0, fullyReceived: 0 }
 
   const handleCreate = () => {
     setSelectedOrder(null)

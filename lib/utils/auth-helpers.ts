@@ -18,7 +18,7 @@ export interface JWTPayload {
  */
 export function generateToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string {
   return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: `${SESSION_TIMEOUT}s`, // Use SESSION_TIMEOUT from env (in seconds)
+    expiresIn: parseInt(SESSION_TIMEOUT), // Use SESSION_TIMEOUT from env (in seconds)
   });
 }
 

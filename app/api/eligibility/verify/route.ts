@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
       // Check shift eligibility
       if (rule.applicableFor.shifts && rule.applicableFor.shifts.length > 0) {
         const shiftMatches = rule.applicableFor.shifts.some(
-          (shiftId) => shiftId.toString() === employee.shift?._id?.toString()
+          (shiftId: any) => shiftId.toString() === employee.shift?.id?.toString()
         )
         if (!shiftMatches) {
           matches = false
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
       // Check department eligibility
       if (rule.applicableFor.departments && rule.applicableFor.departments.length > 0) {
         const deptMatches = rule.applicableFor.departments.some(
-          (deptId) => deptId.toString() === employee.department?._id?.toString()
+          (deptId: any) => deptId.toString() === employee.department?.id?.toString()
         )
         if (!deptMatches) {
           matches = false
@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
       // Check specific employees
       if (rule.applicableFor.specificEmployees && rule.applicableFor.specificEmployees.length > 0) {
         const employeeMatches = rule.applicableFor.specificEmployees.some(
-          (empId) => empId.toString() === employee._id.toString()
+          (empId: any) => empId.toString() === employee._id.toString()
         )
         if (!employeeMatches) {
           matches = false
@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Check OT requirement
-        if (rule.requiresOT && (!attendance || !attendance.otHours || attendance.otHours <= 0)) {
+        if (rule.requiresOT && (!attendance || !attendance.overtimeHours || attendance.overtimeHours <= 0)) {
           matches = false
           reasons.push('OT hours required')
         }
@@ -228,7 +228,6 @@ export async function POST(request: NextRequest) {
           department: employee.department?.name,
           shift: employee.shift?.name,
           employmentType: employee.employmentType,
-          photo: employee.photo,
         },
         mealSession: {
           id: mealSession._id,

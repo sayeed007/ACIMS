@@ -145,9 +145,9 @@ inventoryItemSchema.pre('save', function (next) {
 // Middleware to filter out deleted items
 inventoryItemSchema.pre(/^find/, function (next) {
   // Add isDeleted filter to the existing query
-  const query = this.getQuery();
+  const query = (this as any).getFilter();
   if (!query.hasOwnProperty('isDeleted')) {
-    this.where({ isDeleted: { $ne: true } });
+    (this as any).where({ isDeleted: { $ne: true } });
   }
   next();
 });

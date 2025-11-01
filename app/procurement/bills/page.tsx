@@ -38,7 +38,7 @@ export default function BillsPage() {
   const { data: statsData, isLoading: statsLoading } = useBillStats()
 
   const bills = data?.data || []
-  const stats = statsData?.data || { total: 0, unpaid: 0, partiallyPaid: 0, fullyPaid: 0, totalOutstanding: 0 }
+  const stats = (statsData?.data as any) || { total: 0, unpaid: 0, partiallyPaid: 0, fullyPaid: 0, totalOutstanding: 0 }
 
   const handleCreate = () => {
     setSelectedBill(null)

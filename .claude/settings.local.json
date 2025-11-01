@@ -22,7 +22,8 @@
       "Bash(node test-api.js:*)",
       "Bash(node test-api-auth.js:*)",
       "Bash(Stop-Process -Id 27244 -Force)",
-      "Bash(npm run seed:*)"
+      "Bash(npm run seed:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

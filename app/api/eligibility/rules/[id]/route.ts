@@ -9,7 +9,7 @@ import { getCurrentUser } from '@/lib/utils/auth-helpers'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser()
@@ -17,10 +17,11 @@ export async function GET(
       return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
     }
 
+    const { id } = await params
     await connectDB()
 
     const rule = await EligibilityRule.findOne({
-      _id: params.id,
+      _id: id,
       isDeleted: false,
     }).lean()
 
@@ -40,7 +41,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser()
@@ -48,6 +49,7 @@ export async function PUT(
       return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
     }
 
+    const { id } = await params
     const body = await request.json()
 
     // Validate required fields if being updated
@@ -63,7 +65,7 @@ export async function PUT(
 
     // Find existing rule
     const existingRule = await EligibilityRule.findOne({
-      _id: params.id,
+      _id: id,
       isDeleted: false,
     })
 
@@ -73,7 +75,7 @@ export async function PUT(
 
     // Update rule
     const updatedRule = await EligibilityRule.findByIdAndUpdate(
-      params.id,
+      id,
       {
         $set: {
           ...body,
@@ -100,7 +102,7 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser()
@@ -108,11 +110,12 @@ export async function DELETE(
       return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
     }
 
+    const { id } = await params
     await connectDB()
 
     // Find existing rule
     const existingRule = await EligibilityRule.findOne({
-      _id: params.id,
+      _id: id,
       isDeleted: false,
     })
 
@@ -121,7 +124,7 @@ export async function DELETE(
     }
 
     // Soft delete
-    await EligibilityRule.findByIdAndUpdate(params.id, {
+    await EligibilityRule.findByIdAndUpdate(id, {
       $set: {
         isDeleted: true,
         updatedAt: new Date(),

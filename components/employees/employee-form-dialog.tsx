@@ -72,15 +72,14 @@ export function EmployeeFormDialog({
       phone: '',
       departmentId: '',
       shiftId: '',
-      employeeType: 'PERMANENT',
+      employmentType: 'PERMANENT',
       dateOfJoining: new Date().toISOString().split('T')[0],
-      bloodGroup: '',
     },
   });
 
   const selectedDepartmentId = watch('departmentId');
   const selectedShiftId = watch('shiftId');
-  const selectedEmployeeType = watch('employeeType');
+  const selectedEmployeeType = watch('employmentType');
 
   // Reset form when dialog opens/closes or employee changes
   useEffect(() => {
@@ -91,11 +90,10 @@ export function EmployeeFormDialog({
           name: employee.name,
           email: employee.email || '',
           phone: employee.phone || '',
-          departmentId: employee.department._id,
-          shiftId: employee.shift._id,
-          employeeType: employee.employeeType,
-          dateOfJoining: employee.dateOfJoining.split('T')[0],
-          bloodGroup: employee.bloodGroup || '',
+          departmentId: employee.department.id as any,
+          shiftId: employee.shift.id as any,
+          employmentType: employee.employmentType,
+          dateOfJoining: employee.joiningDate?.split('T')[0] || new Date().toISOString().split('T')[0],
         });
       } else {
         reset({
@@ -105,9 +103,8 @@ export function EmployeeFormDialog({
           phone: '',
           departmentId: '',
           shiftId: '',
-          employeeType: 'PERMANENT',
+          employmentType: 'PERMANENT',
           dateOfJoining: new Date().toISOString().split('T')[0],
-          bloodGroup: '',
         });
       }
     }
@@ -267,7 +264,7 @@ export function EmployeeFormDialog({
               </Label>
               <Select
                 value={selectedEmployeeType}
-                onValueChange={(value: any) => setValue('employeeType', value)}
+                onValueChange={(value: any) => setValue('employmentType', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
@@ -296,28 +293,6 @@ export function EmployeeFormDialog({
               )}
             </div>
 
-            {/* Blood Group */}
-            <div className="space-y-2">
-              <Label htmlFor="bloodGroup">Blood Group</Label>
-              <Select
-                value={watch('bloodGroup')}
-                onValueChange={(value) => setValue('bloodGroup', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select blood group" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="A+">A+</SelectItem>
-                  <SelectItem value="A-">A-</SelectItem>
-                  <SelectItem value="B+">B+</SelectItem>
-                  <SelectItem value="B-">B-</SelectItem>
-                  <SelectItem value="O+">O+</SelectItem>
-                  <SelectItem value="O-">O-</SelectItem>
-                  <SelectItem value="AB+">AB+</SelectItem>
-                  <SelectItem value="AB-">AB-</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
           <DialogFooter>

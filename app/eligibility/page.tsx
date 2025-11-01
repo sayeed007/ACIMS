@@ -29,7 +29,7 @@ export default function EligibilityPage() {
   const { data: statsData, isLoading: statsLoading, error: statsError } = useEligibilityRuleStats()
 
   const rules = data?.data || []
-  const stats = statsData?.data || { total: 0, active: 0, inactive: 0 }
+  const stats = (statsData?.data as { total: number; active: number; inactive: number }) || { total: 0, active: 0, inactive: 0 }
 
   // Debug logging
   useEffect(() => {

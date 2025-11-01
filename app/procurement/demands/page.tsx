@@ -35,7 +35,7 @@ export default function PurchaseDemandsPage() {
   const { data: statsData, isLoading: statsLoading } = usePurchaseDemandStats()
 
   const demands = data?.data || []
-  const stats = statsData?.data || { total: 0, draft: 0, submitted: 0, approved: 0 }
+  const stats = (statsData?.data as any) || { total: 0, draft: 0, submitted: 0, approved: 0 }
 
   const handleCreate = () => {
     setSelectedDemand(null)

@@ -161,9 +161,9 @@ stockMovementSchema.pre('save', function (next) {
 // Middleware to exclude deleted documents
 stockMovementSchema.pre(/^find/, function (next) {
   // Only filter if not explicitly querying for deleted items
-  const query = this.getQuery();
+  const query = (this as any).getFilter();
   if (!('isDeleted' in query)) {
-    this.where({ isDeleted: false });
+    (this as any).where({ isDeleted: false });
   }
   next();
 });

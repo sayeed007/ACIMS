@@ -4,13 +4,14 @@ import AccessControlRule from '@/lib/db/models/AccessControlRule'
 import { successResponse, errorResponse } from '@/lib/utils/api-response'
 import { getCurrentUser } from '@/lib/utils/auth-helpers'
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser()
     if (!user) return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
 
+    const { id } = await params
     await connectDB()
-    const role = await AccessControlRule.findOne({ _id: params.id, isDeleted: false }).lean()
+    const role = await AccessControlRule.findOne({ _id: id, isDeleted: false }).lean()
     if (!role) return errorResponse('NOT_FOUND', 'Role not found', null, 404)
 
     return successResponse(role)
@@ -19,15 +20,16 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser()
     if (!user) return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
 
+    const { id } = await params
     const body = await request.json()
     await connectDB()
 
-    const role = await AccessControlRule.findOne({ _id: params.id, isDeleted: false })
+    const role = await AccessControlRule.findOne({ _id: id, isDeleted: false })
     if (!role) return errorResponse('NOT_FOUND', 'Role not found', null, 404)
 
     if (role.isSystemRole) {
@@ -43,13 +45,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser()
     if (!user) return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
 
+    const { id } = await params
     await connectDB()
-    const role = await AccessControlRule.findOne({ _id: params.id, isDeleted: false })
+    const role = await AccessControlRule.findOne({ _id: id, isDeleted: false })
     if (!role) return errorResponse('NOT_FOUND', 'Role not found', null, 404)
 
     if (role.isSystemRole) {
