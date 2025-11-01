@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Plus, Search, FileText, Loader2, DollarSign, AlertCircle } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useBills, useBillStats } from '@/hooks/useBills'
+import { BillFormDialog } from '@/components/procurement/bill-form-dialog'
 import { format } from 'date-fns'
 
 const PAYMENT_STATUS_COLORS = {
@@ -25,6 +26,9 @@ const STATUS_COLORS = {
 
 export default function BillsPage() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [formOpen, setFormOpen] = useState(false)
+  const [selectedBill, setSelectedBill] = useState<any>(null)
+  const [formMode, setFormMode] = useState<'create' | 'edit'>('create')
 
   const { data, isLoading } = useBills({
     search: searchQuery || undefined,
@@ -36,6 +40,18 @@ export default function BillsPage() {
   const bills = data?.data || []
   const stats = statsData?.data || { total: 0, unpaid: 0, partiallyPaid: 0, fullyPaid: 0, totalOutstanding: 0 }
 
+  const handleCreate = () => {
+    setSelectedBill(null)
+    setFormMode('create')
+    setFormOpen(true)
+  }
+
+  const handleEdit = (bill: any) => {
+    setSelectedBill(bill)
+    setFormMode('edit')
+    setFormOpen(true)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -43,7 +59,7 @@ export default function BillsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Bills Management</h1>
           <p className="text-muted-foreground">Track vendor bills and payments</p>
         </div>
-        <Button>
+        <Button onClick={handleCreate}>
           <Plus className="mr-2 h-4 w-4" />
           New Bill
         </Button>
@@ -172,6 +188,13 @@ export default function BillsPage() {
           )}
         </CardContent>
       </Card>
+
+      <BillFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        bill={selectedBill}
+        mode={formMode}
+      />
     </div>
   )
 }

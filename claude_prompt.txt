@@ -1,5 +1,7 @@
- Read app\inventory\reconciliations\page.tsx the actual component
-and lib\db\seed.ts => seeder file to fill the db
+I have 4 feature in procurements - C:\Users\nsl\Desktop\FoodManagement\app\procurement folder
+- Demand
+- Vendors complete feature with create functionality 
+- Purchase Orders
+- Bills
 
-now the issue is though i reconciliations in seed with 1 entry and it is in DB but in UI it is not showing
-Simmilar issue i have faced and solved - can have this reference ./TROUBLESHOOTING_API_DATA_ISSUES.md
+now I need you to add the rest 3 create form - should place in components\procurement and follow existing pattern like the components\procurement\vendor-form-dialog.tsx

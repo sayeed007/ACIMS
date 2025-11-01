@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Plus, Search, FileText, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { usePurchaseDemands, usePurchaseDemandStats } from '@/hooks/usePurchaseDemands'
+import { DemandFormDialog } from '@/components/procurement/demand-form-dialog'
 import { format } from 'date-fns'
 
 const STATUS_COLORS = {
@@ -21,6 +22,9 @@ const STATUS_COLORS = {
 export default function PurchaseDemandsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('')
+  const [formOpen, setFormOpen] = useState(false)
+  const [selectedDemand, setSelectedDemand] = useState<any>(null)
+  const [formMode, setFormMode] = useState<'create' | 'edit'>('create')
 
   const { data, isLoading } = usePurchaseDemands({
     search: searchQuery || undefined,
@@ -33,6 +37,18 @@ export default function PurchaseDemandsPage() {
   const demands = data?.data || []
   const stats = statsData?.data || { total: 0, draft: 0, submitted: 0, approved: 0 }
 
+  const handleCreate = () => {
+    setSelectedDemand(null)
+    setFormMode('create')
+    setFormOpen(true)
+  }
+
+  const handleEdit = (demand: any) => {
+    setSelectedDemand(demand)
+    setFormMode('edit')
+    setFormOpen(true)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -40,7 +56,7 @@ export default function PurchaseDemandsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Purchase Demands</h1>
           <p className="text-muted-foreground">Manage purchase requisitions and demands</p>
         </div>
-        <Button>
+        <Button onClick={handleCreate}>
           <Plus className="mr-2 h-4 w-4" />
           New Demand
         </Button>
@@ -161,6 +177,13 @@ export default function PurchaseDemandsPage() {
           )}
         </CardContent>
       </Card>
+
+      <DemandFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        demand={selectedDemand}
+        mode={formMode}
+      />
     </div>
   )
 }

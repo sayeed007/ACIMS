@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Plus, Search, ShoppingCart, Loader2, Package, Truck } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { usePurchaseOrders, usePurchaseOrderStats } from '@/hooks/usePurchaseOrders'
+import { PurchaseOrderFormDialog } from '@/components/procurement/purchase-order-form-dialog'
 import { format } from 'date-fns'
 
 const STATUS_COLORS = {
@@ -21,6 +22,9 @@ const STATUS_COLORS = {
 
 export default function PurchaseOrdersPage() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [formOpen, setFormOpen] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState<any>(null)
+  const [formMode, setFormMode] = useState<'create' | 'edit'>('create')
 
   const { data, isLoading } = usePurchaseOrders({
     search: searchQuery || undefined,
@@ -32,6 +36,18 @@ export default function PurchaseOrdersPage() {
   const orders = data?.data || []
   const stats = statsData?.data || { total: 0, draft: 0, approved: 0, fullyReceived: 0 }
 
+  const handleCreate = () => {
+    setSelectedOrder(null)
+    setFormMode('create')
+    setFormOpen(true)
+  }
+
+  const handleEdit = (order: any) => {
+    setSelectedOrder(order)
+    setFormMode('edit')
+    setFormOpen(true)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -39,7 +55,7 @@ export default function PurchaseOrdersPage() {
           <h1 className="text-3xl font-bold tracking-tight">Purchase Orders</h1>
           <p className="text-muted-foreground">Manage purchase orders and track deliveries</p>
         </div>
-        <Button>
+        <Button onClick={handleCreate}>
           <Plus className="mr-2 h-4 w-4" />
           New PO
         </Button>
@@ -160,6 +176,13 @@ export default function PurchaseOrdersPage() {
           )}
         </CardContent>
       </Card>
+
+      <PurchaseOrderFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        order={selectedOrder}
+        mode={formMode}
+      />
     </div>
   )
 }
