@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,21 +35,247 @@ export default function AuditLogPage() {
   const [page, setPage] = useState(1)
   const limit = 20
 
-  const dates = getDateRange(dateRange as any,
-    customStartDate ? new Date(customStartDate) : undefined,
-    customEndDate ? new Date(customEndDate) : undefined
-  )
+  // Commented out for demo with static data
+  // const dates = useMemo(() => {
+  //   return getDateRange(dateRange as any,
+  //     customStartDate ? new Date(customStartDate) : undefined,
+  //     customEndDate ? new Date(customEndDate) : undefined
+  //   )
+  // }, [dateRange, customStartDate, customEndDate])
 
-  const filters = {
-    ...dates,
-    action: actionFilter || undefined,
-    module: moduleFilter || undefined,
-    page,
-    limit,
+  // const filters = useMemo(() => ({
+  //   ...dates,
+  //   action: actionFilter || undefined,
+  //   module: moduleFilter || undefined,
+  //   page,
+  //   limit,
+  // }), [dates, actionFilter, moduleFilter, page, limit])
+
+  // const { data, isLoading } = useAuditLogs(filters)
+  // const reportData = data?.data
+
+  // Static demo data
+  const isLoading = false
+  const reportData = {
+    logs: [
+      {
+        _id: '1',
+        timestamp: '2025-10-31T14:30:25Z',
+        action: 'CREATE',
+        module: 'EMPLOYEE',
+        description: 'Created new employee record for John Smith',
+        ipAddress: '192.168.1.105',
+        user: { name: 'Admin User' }
+      },
+      {
+        _id: '2',
+        timestamp: '2025-10-31T14:25:18Z',
+        action: 'UPDATE',
+        module: 'MEAL',
+        description: 'Updated meal session timing for Lunch',
+        ipAddress: '192.168.1.102',
+        user: { name: 'Sarah Johnson' }
+      },
+      {
+        _id: '3',
+        timestamp: '2025-10-31T14:20:45Z',
+        action: 'APPROVE',
+        module: 'PROCUREMENT',
+        description: 'Approved procurement request #PR-2025-142',
+        ipAddress: '192.168.1.98',
+        user: { name: 'Michael Chen' }
+      },
+      {
+        _id: '4',
+        timestamp: '2025-10-31T14:15:32Z',
+        action: 'DELETE',
+        module: 'INVENTORY',
+        description: 'Deleted expired inventory item INV-5432',
+        ipAddress: '192.168.1.105',
+        user: { name: 'Admin User' }
+      },
+      {
+        _id: '5',
+        timestamp: '2025-10-31T14:10:55Z',
+        action: 'LOGIN',
+        module: 'AUTH',
+        description: 'User logged in successfully',
+        ipAddress: '192.168.1.87',
+        user: { name: 'David Park' }
+      },
+      {
+        _id: '6',
+        timestamp: '2025-10-31T14:05:12Z',
+        action: 'VERIFY',
+        module: 'ELIGIBILITY',
+        description: 'Verified meal eligibility for EMP-2345',
+        ipAddress: '192.168.1.76',
+        user: { name: 'Emma Wilson' }
+      },
+      {
+        _id: '7',
+        timestamp: '2025-10-31T14:00:38Z',
+        action: 'UPDATE',
+        module: 'DEPARTMENT',
+        description: 'Updated department budget allocation',
+        ipAddress: '192.168.1.105',
+        user: { name: 'Admin User' }
+      },
+      {
+        _id: '8',
+        timestamp: '2025-10-31T13:55:22Z',
+        action: 'CREATE',
+        module: 'PROCUREMENT',
+        description: 'Created new procurement request for vegetables',
+        ipAddress: '192.168.1.92',
+        user: { name: 'Lisa Anderson' }
+      },
+      {
+        _id: '9',
+        timestamp: '2025-10-31T13:50:47Z',
+        action: 'REJECT',
+        module: 'PROCUREMENT',
+        description: 'Rejected procurement request #PR-2025-139',
+        ipAddress: '192.168.1.98',
+        user: { name: 'Michael Chen' }
+      },
+      {
+        _id: '10',
+        timestamp: '2025-10-31T13:45:15Z',
+        action: 'UPDATE',
+        module: 'INVENTORY',
+        description: 'Updated inventory stock levels',
+        ipAddress: '192.168.1.92',
+        user: { name: 'Lisa Anderson' }
+      },
+      {
+        _id: '11',
+        timestamp: '2025-10-31T13:40:28Z',
+        action: 'LOGIN',
+        module: 'AUTH',
+        description: 'User logged in successfully',
+        ipAddress: '192.168.1.102',
+        user: { name: 'Sarah Johnson' }
+      },
+      {
+        _id: '12',
+        timestamp: '2025-10-31T13:35:55Z',
+        action: 'CREATE',
+        module: 'MEAL',
+        description: 'Created new meal session for Night Shift',
+        ipAddress: '192.168.1.102',
+        user: { name: 'Sarah Johnson' }
+      },
+      {
+        _id: '13',
+        timestamp: '2025-10-31T13:30:10Z',
+        action: 'UPDATE',
+        module: 'ACCESS_CONTROL',
+        description: 'Updated user permissions for role Manager',
+        ipAddress: '192.168.1.105',
+        user: { name: 'Admin User' }
+      },
+      {
+        _id: '14',
+        timestamp: '2025-10-31T13:25:42Z',
+        action: 'VERIFY',
+        module: 'ELIGIBILITY',
+        description: 'Verified meal eligibility for EMP-2389',
+        ipAddress: '192.168.1.76',
+        user: { name: 'Emma Wilson' }
+      },
+      {
+        _id: '15',
+        timestamp: '2025-10-31T13:20:18Z',
+        action: 'LOGOUT',
+        module: 'AUTH',
+        description: 'User logged out',
+        ipAddress: '192.168.1.87',
+        user: { name: 'David Park' }
+      },
+      {
+        _id: '16',
+        timestamp: '2025-10-31T13:15:50Z',
+        action: 'CREATE',
+        module: 'EMPLOYEE',
+        description: 'Created new employee record for Jane Doe',
+        ipAddress: '192.168.1.105',
+        user: { name: 'Admin User' }
+      },
+      {
+        _id: '17',
+        timestamp: '2025-10-31T13:10:25Z',
+        action: 'UPDATE',
+        module: 'PROCUREMENT',
+        description: 'Updated procurement vendor details',
+        ipAddress: '192.168.1.92',
+        user: { name: 'Lisa Anderson' }
+      },
+      {
+        _id: '18',
+        timestamp: '2025-10-31T13:05:38Z',
+        action: 'DELETE',
+        module: 'DEPARTMENT',
+        description: 'Deleted inactive department',
+        ipAddress: '192.168.1.105',
+        user: { name: 'Admin User' }
+      },
+      {
+        _id: '19',
+        timestamp: '2025-10-31T13:00:12Z',
+        action: 'APPROVE',
+        module: 'PROCUREMENT',
+        description: 'Approved procurement request #PR-2025-141',
+        ipAddress: '192.168.1.98',
+        user: { name: 'Michael Chen' }
+      },
+      {
+        _id: '20',
+        timestamp: '2025-10-31T12:55:45Z',
+        action: 'VERIFY',
+        module: 'ELIGIBILITY',
+        description: 'Verified meal eligibility for EMP-2401',
+        ipAddress: '192.168.1.76',
+        user: { name: 'Emma Wilson' }
+      }
+    ],
+    stats: {
+      actionStats: [
+        { _id: 'CREATE', count: 456, percent: 0.22 },
+        { _id: 'UPDATE', count: 782, percent: 0.38 },
+        { _id: 'DELETE', count: 89, percent: 0.04 },
+        { _id: 'LOGIN', count: 345, percent: 0.17 },
+        { _id: 'LOGOUT', count: 298, percent: 0.14 },
+        { _id: 'VERIFY', count: 234, percent: 0.11 },
+        { _id: 'APPROVE', count: 156, percent: 0.08 },
+        { _id: 'REJECT', count: 67, percent: 0.03 }
+      ],
+      moduleStats: [
+        { _id: 'MEAL', count: 892 },
+        { _id: 'EMPLOYEE', count: 745 },
+        { _id: 'PROCUREMENT', count: 623 },
+        { _id: 'INVENTORY', count: 534 },
+        { _id: 'AUTH', count: 456 },
+        { _id: 'ELIGIBILITY', count: 389 },
+        { _id: 'DEPARTMENT', count: 267 },
+        { _id: 'ACCESS_CONTROL', count: 156 }
+      ],
+      topUsers: [
+        { userName: 'Admin User', actionCount: 1245 },
+        { userName: 'Sarah Johnson', actionCount: 892 },
+        { userName: 'Michael Chen', actionCount: 734 },
+        { userName: 'Lisa Anderson', actionCount: 623 },
+        { userName: 'Emma Wilson', actionCount: 567 },
+        { userName: 'David Park', actionCount: 445 },
+        { userName: 'System', actionCount: 312 }
+      ]
+    },
+    pagination: {
+      total: 2047,
+      page: 1,
+      totalPages: 103
+    }
   }
-
-  const { data, isLoading } = useAuditLogs(filters)
-  const reportData = data?.data
 
   const handleExportLogs = () => {
     exportToCSV(reportData?.logs || [], 'audit_logs')
@@ -158,7 +384,6 @@ export default function AuditLogPage() {
                   <SelectValue placeholder="All Actions" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Actions</SelectItem>
                   <SelectItem value="CREATE">Create</SelectItem>
                   <SelectItem value="UPDATE">Update</SelectItem>
                   <SelectItem value="DELETE">Delete</SelectItem>
@@ -178,7 +403,6 @@ export default function AuditLogPage() {
                   <SelectValue placeholder="All Modules" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Modules</SelectItem>
                   <SelectItem value="AUTH">Authentication</SelectItem>
                   <SelectItem value="EMPLOYEE">Employees</SelectItem>
                   <SelectItem value="DEPARTMENT">Departments</SelectItem>

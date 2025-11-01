@@ -743,124 +743,154 @@ async function seed() {
       },
     ])
 
-    // Create Meal Transactions
+    // Create Meal Transactions - Enhanced with historical data
     console.log('🍴 Creating meal transactions...')
-    const mealTransactions = await MealTransaction.insertMany([
-      {
-        transactionId: `TXN${Date.now()}001`,
-        date: today,
-        mealSession: {
-          id: mealSessions[0]._id,
-          name: mealSessions[0].name,
-          code: mealSessions[0].code,
-        },
-        employee: {
-          id: employees[0]._id,
-          employeeId: employees[0].employeeId,
-          name: employees[0].name,
-        },
-        department: {
-          id: departments[0]._id,
-          name: departments[0].name,
-        },
-        shift: {
-          id: shifts[0]._id,
-          name: shifts[0].name,
-        },
-        device: {
-          id: devices[0].deviceId,
-          name: devices[0].deviceName,
-          location: devices[0].location,
-        },
-        verificationMethod: 'FACE_RECOGNITION',
-        verificationStatus: 'AUTHORIZED',
-        verificationConfidence: 95.5,
-        eligibilityCheck: {
-          wasEligible: true,
-          attendanceStatus: 'PRESENT',
-          shiftMatch: true,
-        },
-        isGuestMeal: false,
-        timestamp: new Date(today.setHours(7, 30)),
-        isDeleted: false,
-      },
-      {
-        transactionId: `TXN${Date.now()}002`,
-        date: today,
-        mealSession: {
-          id: mealSessions[0]._id,
-          name: mealSessions[0].name,
-          code: mealSessions[0].code,
-        },
-        employee: {
-          id: employees[1]._id,
-          employeeId: employees[1].employeeId,
-          name: employees[1].name,
-        },
-        department: {
-          id: departments[1]._id,
-          name: departments[1].name,
-        },
-        shift: {
-          id: shifts[0]._id,
-          name: shifts[0].name,
-        },
-        device: {
-          id: devices[0].deviceId,
-          name: devices[0].deviceName,
-          location: devices[0].location,
-        },
-        verificationMethod: 'FACE_RECOGNITION',
-        verificationStatus: 'AUTHORIZED',
-        verificationConfidence: 92.3,
-        eligibilityCheck: {
-          wasEligible: true,
-          attendanceStatus: 'PRESENT',
-          shiftMatch: true,
-        },
-        isGuestMeal: false,
-        timestamp: new Date(today.setHours(7, 45)),
-        isDeleted: false,
-      },
-      {
-        transactionId: `TXN${Date.now()}003`,
-        date: today,
-        mealSession: {
-          id: mealSessions[1]._id,
-          name: mealSessions[1].name,
-          code: mealSessions[1].code,
-        },
-        employee: {
-          id: employees[2]._id,
-          employeeId: employees[2].employeeId,
-          name: employees[2].name,
-        },
-        department: {
-          id: departments[2]._id,
-          name: departments[2].name,
-        },
-        shift: {
-          id: shifts[0]._id,
-          name: shifts[0].name,
-        },
-        device: {
-          id: devices[0].deviceId,
-          name: devices[0].deviceName,
-          location: devices[0].location,
-        },
-        verificationMethod: 'FACE_RECOGNITION',
-        verificationStatus: 'AUTHORIZED',
-        verificationConfidence: 88.7,
-        eligibilityCheck: {
-          wasEligible: true,
-          attendanceStatus: 'PRESENT',
-          shiftMatch: true,
-        },
-        isGuestMeal: false,
-        timestamp: new Date(today.setHours(12, 15)),
-        isDeleted: false,
-      },
-    ])
+    const mealTransactions = []
+
+    // Generate transactions for the past 30 days
+    for (let dayOffset = 0; dayOffset < 30; dayOffset++) {
+      const transactionDate = new Date(today)
+      transactionDate.setDate(transactionDate.getDate() - dayOffset)
+
+      // Breakfast transactions (3-5 meals per day)
+      const breakfastCount = Math.floor(Math.random() * 3) + 3
+      for (let i = 0; i < breakfastCount; i++) {
+        const employee = employees[i % employees.length]
+        mealTransactions.push({
+          transactionId: `TXN${Date.now()}-${dayOffset}-BKF-${i}`,
+          date: new Date(transactionDate),
+          mealSession: {
+            id: mealSessions[0]._id,
+            name: mealSessions[0].name,
+            code: mealSessions[0].code,
+          },
+          employee: {
+            id: employee._id,
+            employeeId: employee.employeeId,
+            name: employee.name,
+          },
+          department: {
+            id: employee.department.id,
+            name: employee.department.name,
+          },
+          shift: {
+            id: employee.shift.id,
+            name: employee.shift.name,
+          },
+          device: {
+            id: devices[0].deviceId,
+            name: devices[0].deviceName,
+            location: devices[0].location,
+          },
+          verificationMethod: 'FACE_RECOGNITION',
+          verificationStatus: 'AUTHORIZED',
+          verificationConfidence: 85 + Math.random() * 15,
+          eligibilityCheck: {
+            wasEligible: true,
+            attendanceStatus: 'PRESENT',
+            shiftMatch: true,
+          },
+          isGuestMeal: false,
+          cost: 45 + Math.floor(Math.random() * 15), // ₹45-60 per meal
+          timestamp: new Date(transactionDate.setHours(7, 15 + i * 10)),
+          isDeleted: false,
+        })
+      }
+
+      // Lunch transactions (4-7 meals per day)
+      const lunchCount = Math.floor(Math.random() * 4) + 4
+      for (let i = 0; i < lunchCount; i++) {
+        const employee = employees[i % employees.length]
+        const lunchDate = new Date(transactionDate)
+        mealTransactions.push({
+          transactionId: `TXN${Date.now()}-${dayOffset}-LUN-${i}`,
+          date: new Date(lunchDate),
+          mealSession: {
+            id: mealSessions[1]._id,
+            name: mealSessions[1].name,
+            code: mealSessions[1].code,
+          },
+          employee: {
+            id: employee._id,
+            employeeId: employee.employeeId,
+            name: employee.name,
+          },
+          department: {
+            id: employee.department.id,
+            name: employee.department.name,
+          },
+          shift: {
+            id: employee.shift.id,
+            name: employee.shift.name,
+          },
+          device: {
+            id: devices[0].deviceId,
+            name: devices[0].deviceName,
+            location: devices[0].location,
+          },
+          verificationMethod: 'FACE_RECOGNITION',
+          verificationStatus: 'AUTHORIZED',
+          verificationConfidence: 85 + Math.random() * 15,
+          eligibilityCheck: {
+            wasEligible: true,
+            attendanceStatus: 'PRESENT',
+            shiftMatch: true,
+          },
+          isGuestMeal: false,
+          cost: 55 + Math.floor(Math.random() * 20), // ₹55-75 per meal
+          timestamp: new Date(lunchDate.setHours(12, 10 + i * 8)),
+          isDeleted: false,
+        })
+      }
+
+      // Dinner transactions (2-4 meals per day)
+      const dinnerCount = Math.floor(Math.random() * 3) + 2
+      for (let i = 0; i < dinnerCount; i++) {
+        const employee = employees[i % employees.length]
+        const dinnerDate = new Date(transactionDate)
+        mealTransactions.push({
+          transactionId: `TXN${Date.now()}-${dayOffset}-DIN-${i}`,
+          date: new Date(dinnerDate),
+          mealSession: {
+            id: mealSessions[2]._id,
+            name: mealSessions[2].name,
+            code: mealSessions[2].code,
+          },
+          employee: {
+            id: employee._id,
+            employeeId: employee.employeeId,
+            name: employee.name,
+          },
+          department: {
+            id: employee.department.id,
+            name: employee.department.name,
+          },
+          shift: {
+            id: employee.shift.id,
+            name: employee.shift.name,
+          },
+          device: {
+            id: devices[0].deviceId,
+            name: devices[0].deviceName,
+            location: devices[0].location,
+          },
+          verificationMethod: 'FACE_RECOGNITION',
+          verificationStatus: 'AUTHORIZED',
+          verificationConfidence: 85 + Math.random() * 15,
+          eligibilityCheck: {
+            wasEligible: true,
+            attendanceStatus: 'PRESENT',
+            shiftMatch: true,
+          },
+          isGuestMeal: i === 0 && dayOffset % 5 === 0, // Some guest meals
+          cost: 50 + Math.floor(Math.random() * 20), // ₹50-70 per meal
+          timestamp: new Date(dinnerDate.setHours(19, 20 + i * 12)),
+          isDeleted: false,
+        })
+      }
+    }
+
+    await MealTransaction.insertMany(mealTransactions)
 
     // Create Vendors
     console.log('🏪 Creating vendors...')
@@ -1577,7 +1607,7 @@ async function seed() {
     console.log(`   - ${employees.length} Employees`)
     console.log(`   - ${devices.length} Devices`)
     console.log(`   - ${attendanceRecords.length} Attendance Records`)
-    console.log(`   - ${mealTransactions.length} Meal Transactions`)
+    console.log(`   - ${mealTransactions.length} Meal Transactions (30 days of data)`)
     console.log(`   - ${vendors.length} Vendors`)
     console.log(`   - ${inventoryItems.length} Inventory Items`)
     console.log(`   - ${stockMovements.length} Stock Movements`)

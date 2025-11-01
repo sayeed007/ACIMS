@@ -21,7 +21,8 @@
       "Bash(Remove-Item -Force test-inventory.js)",
       "Bash(node test-api.js:*)",
       "Bash(node test-api-auth.js:*)",
-      "Bash(Stop-Process -Id 27244 -Force)"
+      "Bash(Stop-Process -Id 27244 -Force)",
+      "Bash(npm run seed:*)"
     ],
     "deny": [],
     "ask": []

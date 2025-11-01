@@ -14,10 +14,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      )
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
     }
 
     await connectDB()
@@ -26,9 +23,15 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
 
-    const dateFilter: any = {}
+    const mealDateFilter: any = {}
+    const generalDateFilter: any = {}
+
     if (startDate && endDate) {
-      dateFilter.createdAt = {
+      mealDateFilter.date = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      }
+      generalDateFilter.createdAt = {
         $gte: new Date(startDate),
         $lte: new Date(endDate),
       }
@@ -36,10 +39,10 @@ export async function GET(request: NextRequest) {
 
     // Meal costs over time
     const mealCostTrend = await MealTransaction.aggregate([
-      { $match: { isDeleted: false, ...dateFilter } },
+      { $match: { isDeleted: false, ...mealDateFilter } },
       {
         $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
           totalCost: { $sum: '$cost' },
           mealCount: { $sum: 1 },
           avgCost: { $avg: '$cost' },
@@ -50,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     // Procurement costs
     const procurementCosts = await PurchaseOrder.aggregate([
-      { $match: { isDeleted: false, ...dateFilter } },
+      { $match: { isDeleted: false, ...generalDateFilter } },
       {
         $group: {
           _id: { $dateToString: { format: '%Y-%m-%d', date: '$poDate' } },
@@ -63,7 +66,7 @@ export async function GET(request: NextRequest) {
 
     // Vendor-wise spending
     const vendorSpending = await PurchaseOrder.aggregate([
-      { $match: { isDeleted: false, ...dateFilter } },
+      { $match: { isDeleted: false, ...generalDateFilter } },
       {
         $group: {
           _id: '$vendor.id',
@@ -78,7 +81,7 @@ export async function GET(request: NextRequest) {
 
     // Bills payment status
     const billsAnalysis = await Bill.aggregate([
-      { $match: { isDeleted: false, ...dateFilter } },
+      { $match: { isDeleted: false, ...generalDateFilter } },
       {
         $group: {
           _id: '$paymentStatus',
@@ -91,7 +94,7 @@ export async function GET(request: NextRequest) {
 
     // Department-wise meal costs
     const departmentCosts = await MealTransaction.aggregate([
-      { $match: { isDeleted: false, ...dateFilter } },
+      { $match: { isDeleted: false, ...mealDateFilter } },
       {
         $group: {
           _id: '$employee.department',
@@ -126,12 +129,12 @@ export async function GET(request: NextRequest) {
         $match: {
           isDeleted: false,
           movementType: 'OUT',
-          ...dateFilter,
+          ...generalDateFilter,
         },
       },
       {
         $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$transactionDate' } },
           totalCost: { $sum: '$totalCost' },
           totalQuantity: { $sum: '$quantity' },
         },
@@ -141,7 +144,7 @@ export async function GET(request: NextRequest) {
 
     // Cost per meal calculation
     const costPerMeal = await MealTransaction.aggregate([
-      { $match: { isDeleted: false, ...dateFilter } },
+      { $match: { isDeleted: false, ...mealDateFilter } },
       {
         $group: {
           _id: null,
@@ -161,12 +164,12 @@ export async function GET(request: NextRequest) {
 
     // Monthly comparison
     const monthlyComparison = await MealTransaction.aggregate([
-      { $match: { isDeleted: false, ...dateFilter } },
+      { $match: { isDeleted: false, ...mealDateFilter } },
       {
         $group: {
           _id: {
-            year: { $year: '$createdAt' },
-            month: { $month: '$createdAt' },
+            year: { $year: '$date' },
+            month: { $month: '$date' },
           },
           totalCost: { $sum: '$cost' },
           mealCount: { $sum: 1 },
@@ -175,27 +178,22 @@ export async function GET(request: NextRequest) {
       { $sort: { '_id.year': 1, '_id.month': 1 } },
     ])
 
-    return NextResponse.json(
-      successResponse({
-        mealCostTrend,
-        procurementCosts,
-        vendorSpending,
-        billsAnalysis,
-        departmentCosts,
-        inventoryCosts,
-        costPerMeal: costPerMeal[0] || { totalMeals: 0, totalCost: 0, costPerMeal: 0 },
-        monthlyComparison,
-        filters: {
-          startDate,
-          endDate,
-        },
-      })
-    )
+    return successResponse({
+      mealCostTrend,
+      procurementCosts,
+      vendorSpending,
+      billsAnalysis,
+      departmentCosts,
+      inventoryCosts,
+      costPerMeal: costPerMeal[0] || { totalMeals: 0, totalCost: 0, costPerMeal: 0 },
+      monthlyComparison,
+      filters: {
+        startDate,
+        endDate,
+      },
+    })
   } catch (error: any) {
     console.error('Get cost reports error:', error)
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch reports', null, 500),
-      { status: 500 }
-    )
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch reports', null, 500)
   }
 }

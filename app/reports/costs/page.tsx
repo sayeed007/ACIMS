@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,13 +20,121 @@ export default function CostAnalysisPage() {
   const [customStartDate, setCustomStartDate] = useState('')
   const [customEndDate, setCustomEndDate] = useState('')
 
-  const dates = getDateRange(dateRange as any,
-    customStartDate ? new Date(customStartDate) : undefined,
-    customEndDate ? new Date(customEndDate) : undefined
-  )
+  // Commented out for demo with static data
+  // const dates = useMemo(() => {
+  //   return getDateRange(dateRange as any,
+  //     customStartDate ? new Date(customStartDate) : undefined,
+  //     customEndDate ? new Date(customEndDate) : undefined
+  //   )
+  // }, [dateRange, customStartDate, customEndDate])
 
-  const { data, isLoading } = useCostReports(dates)
-  const reportData = data?.data
+  // const { data, isLoading } = useCostReports(dates)
+  // const reportData = data?.data
+
+  // Static demo data
+  const isLoading = false
+  const reportData = {
+    costPerMeal: {
+      totalMeals: 8542,
+      totalCost: 427100,
+      costPerMeal: 50.01
+    },
+    mealCostTrend: [
+      { _id: '2025-10-01', totalCost: 12250, avgCost: 50.00 },
+      { _id: '2025-10-02', totalCost: 13400, avgCost: 50.00 },
+      { _id: '2025-10-03', totalCost: 14450, avgCost: 50.00 },
+      { _id: '2025-10-04', totalCost: 15600, avgCost: 50.00 },
+      { _id: '2025-10-05', totalCost: 13750, avgCost: 50.00 },
+      { _id: '2025-10-06', totalCost: 9900, avgCost: 50.00 },
+      { _id: '2025-10-07', totalCost: 9350, avgCost: 50.00 },
+      { _id: '2025-10-08', totalCost: 12800, avgCost: 50.00 },
+      { _id: '2025-10-09', totalCost: 13900, avgCost: 50.00 },
+      { _id: '2025-10-10', totalCost: 14750, avgCost: 50.00 },
+      { _id: '2025-10-11', totalCost: 15900, avgCost: 50.00 },
+      { _id: '2025-10-12', totalCost: 14150, avgCost: 50.00 },
+      { _id: '2025-10-13', totalCost: 10250, avgCost: 50.00 },
+      { _id: '2025-10-14', totalCost: 9600, avgCost: 50.00 },
+      { _id: '2025-10-15', totalCost: 13200, avgCost: 50.00 },
+      { _id: '2025-10-16', totalCost: 14350, avgCost: 50.00 },
+      { _id: '2025-10-17', totalCost: 15050, avgCost: 50.00 },
+      { _id: '2025-10-18', totalCost: 16250, avgCost: 50.00 },
+      { _id: '2025-10-19', totalCost: 14550, avgCost: 50.00 },
+      { _id: '2025-10-20', totalCost: 10500, avgCost: 50.00 },
+      { _id: '2025-10-21', totalCost: 9750, avgCost: 50.00 },
+      { _id: '2025-10-22', totalCost: 13600, avgCost: 50.00 },
+      { _id: '2025-10-23', totalCost: 14700, avgCost: 50.00 },
+      { _id: '2025-10-24', totalCost: 15400, avgCost: 50.00 },
+      { _id: '2025-10-25', totalCost: 16750, avgCost: 50.00 },
+      { _id: '2025-10-26', totalCost: 14900, avgCost: 50.00 },
+      { _id: '2025-10-27', totalCost: 10900, avgCost: 50.00 },
+      { _id: '2025-10-28', totalCost: 10150, avgCost: 50.00 },
+      { _id: '2025-10-29', totalCost: 14050, avgCost: 50.00 },
+      { _id: '2025-10-30', totalCost: 15250, avgCost: 50.00 },
+      { _id: '2025-10-31', totalCost: 16100, avgCost: 50.00 }
+    ],
+    vendorSpending: [
+      { vendorName: 'Fresh Vegetables Ltd', totalSpent: 145680, orderCount: 45 },
+      { vendorName: 'Prime Meat Suppliers', totalSpent: 132450, orderCount: 38 },
+      { vendorName: 'Dairy Fresh Co', totalSpent: 98750, orderCount: 52 },
+      { vendorName: 'Grain Traders Inc', totalSpent: 87320, orderCount: 28 },
+      { vendorName: 'Spice Market', totalSpent: 65430, orderCount: 34 },
+      { vendorName: 'Ocean Foods', totalSpent: 54210, orderCount: 22 },
+      { vendorName: 'Bakery Supplies', totalSpent: 43580, orderCount: 31 },
+      { vendorName: 'Beverage Distributors', totalSpent: 38920, orderCount: 27 }
+    ],
+    departmentCosts: [
+      { departmentName: 'Production', totalCost: 107800, percent: 0.2524 },
+      { departmentName: 'Engineering', totalCost: 92250, percent: 0.2159 },
+      { departmentName: 'Quality Control', totalCost: 71600, percent: 0.1676 },
+      { departmentName: 'Maintenance', totalCost: 54450, percent: 0.1275 },
+      { departmentName: 'Administration', totalCost: 43800, percent: 0.1026 },
+      { departmentName: 'Logistics', totalCost: 32700, percent: 0.0766 }
+    ],
+    billsAnalysis: [
+      { _id: 'PAID', totalAmount: 356200, balanceAmount: 0, count: 42 },
+      { _id: 'PARTIALLY_PAID', totalAmount: 125400, balanceAmount: 45600, count: 15 },
+      { _id: 'UNPAID', totalAmount: 89300, balanceAmount: 89300, count: 12 }
+    ],
+    monthlyComparison: [
+      { _id: { year: 2025, month: 7 }, totalCost: 389450, mealCount: 7890 },
+      { _id: { year: 2025, month: 8 }, totalCost: 412300, mealCount: 8210 },
+      { _id: { year: 2025, month: 9 }, totalCost: 405870, mealCount: 8156 },
+      { _id: { year: 2025, month: 10 }, totalCost: 427100, mealCount: 8542 }
+    ],
+    inventoryCosts: [
+      { _id: '2025-10-01', totalCost: 8450 },
+      { _id: '2025-10-02', totalCost: 9120 },
+      { _id: '2025-10-03', totalCost: 9870 },
+      { _id: '2025-10-04', totalCost: 10250 },
+      { _id: '2025-10-05', totalCost: 8950 },
+      { _id: '2025-10-06', totalCost: 6780 },
+      { _id: '2025-10-07', totalCost: 6320 },
+      { _id: '2025-10-08', totalCost: 8890 },
+      { _id: '2025-10-09', totalCost: 9450 },
+      { _id: '2025-10-10', totalCost: 10100 },
+      { _id: '2025-10-11', totalCost: 10890 },
+      { _id: '2025-10-12', totalCost: 9640 },
+      { _id: '2025-10-13', totalCost: 7120 },
+      { _id: '2025-10-14', totalCost: 6850 },
+      { _id: '2025-10-15', totalCost: 9230 },
+      { _id: '2025-10-16', totalCost: 9780 },
+      { _id: '2025-10-17', totalCost: 10320 },
+      { _id: '2025-10-18', totalCost: 11150 },
+      { _id: '2025-10-19', totalCost: 9920 },
+      { _id: '2025-10-20', totalCost: 7340 },
+      { _id: '2025-10-21', totalCost: 6980 },
+      { _id: '2025-10-22', totalCost: 9450 },
+      { _id: '2025-10-23', totalCost: 10020 },
+      { _id: '2025-10-24', totalCost: 10560 },
+      { _id: '2025-10-25', totalCost: 11450 },
+      { _id: '2025-10-26', totalCost: 10180 },
+      { _id: '2025-10-27', totalCost: 7560 },
+      { _id: '2025-10-28', totalCost: 7210 },
+      { _id: '2025-10-29', totalCost: 9670 },
+      { _id: '2025-10-30', totalCost: 10430 },
+      { _id: '2025-10-31', totalCost: 11020 }
+    ]
+  }
 
   const handleExportVendors = () => {
     exportToCSV(reportData?.vendorSpending || [], 'vendor_spending_analysis')

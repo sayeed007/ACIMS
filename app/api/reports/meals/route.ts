@@ -20,10 +20,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      )
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
     }
 
     await connectDB()
@@ -40,7 +37,7 @@ export async function GET(request: NextRequest) {
     const matchQuery: any = { isDeleted: false }
 
     if (startDate && endDate) {
-      matchQuery.createdAt = {
+      matchQuery.date = {
         $gte: new Date(startDate),
         $lte: new Date(endDate),
       }
@@ -108,7 +105,7 @@ export async function GET(request: NextRequest) {
       {
         $group: {
           _id: {
-            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+            $dateToString: { format: '%Y-%m-%d', date: '$date' },
           },
           count: { $sum: 1 },
           totalCost: { $sum: '$cost' },
@@ -180,35 +177,30 @@ export async function GET(request: NextRequest) {
       { $match: matchQuery },
       {
         $group: {
-          _id: { $hour: '$createdAt' },
+          _id: { $hour: '$timestamp' },
           count: { $sum: 1 },
         },
       },
       { $sort: { _id: 1 } },
     ])
 
-    return NextResponse.json(
-      successResponse({
-        summary: totalStats[0] || { totalMeals: 0, totalCost: 0, avgCostPerMeal: 0 },
-        mealsBySession,
-        dailyTrend,
-        mealsByDepartment,
-        mealsByShift,
-        hourlyDistribution,
-        filters: {
-          startDate,
-          endDate,
-          mealSessionId,
-          departmentId,
-          shiftId,
-        },
-      })
-    )
+    return successResponse({
+      summary: totalStats[0] || { totalMeals: 0, totalCost: 0, avgCostPerMeal: 0 },
+      mealsBySession,
+      dailyTrend,
+      mealsByDepartment,
+      mealsByShift,
+      hourlyDistribution,
+      filters: {
+        startDate,
+        endDate,
+        mealSessionId,
+        departmentId,
+        shiftId,
+      },
+    })
   } catch (error: any) {
     console.error('Get meal reports error:', error)
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch reports', null, 500),
-      { status: 500 }
-    )
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch reports', null, 500)
   }
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,13 +20,91 @@ export default function MealReportsPage() {
   const [customStartDate, setCustomStartDate] = useState('')
   const [customEndDate, setCustomEndDate] = useState('')
 
-  const dates = getDateRange(dateRange as any,
-    customStartDate ? new Date(customStartDate) : undefined,
-    customEndDate ? new Date(customEndDate) : undefined
-  )
+  // Commented out for demo with static data
+  // const dates = useMemo(() => {
+  //   return getDateRange(dateRange as any,
+  //     customStartDate ? new Date(customStartDate) : undefined,
+  //     customEndDate ? new Date(customEndDate) : undefined
+  //   )
+  // }, [dateRange, customStartDate, customEndDate])
 
-  const { data, isLoading } = useMealReports(dates)
-  const reportData = data?.data
+  // const { data, isLoading } = useMealReports(dates)
+  // const reportData = data?.data
+
+  // Static demo data
+  const isLoading = false
+  const reportData = {
+    summary: {
+      totalMeals: 8542,
+      totalCost: 427100,
+      avgCostPerMeal: 50.01
+    },
+    dailyTrend: [
+      { _id: '2025-10-01', count: 245, totalCost: 12250 },
+      { _id: '2025-10-02', count: 268, totalCost: 13400 },
+      { _id: '2025-10-03', count: 289, totalCost: 14450 },
+      { _id: '2025-10-04', count: 312, totalCost: 15600 },
+      { _id: '2025-10-05', count: 275, totalCost: 13750 },
+      { _id: '2025-10-06', count: 198, totalCost: 9900 },
+      { _id: '2025-10-07', count: 187, totalCost: 9350 },
+      { _id: '2025-10-08', count: 256, totalCost: 12800 },
+      { _id: '2025-10-09', count: 278, totalCost: 13900 },
+      { _id: '2025-10-10', count: 295, totalCost: 14750 },
+      { _id: '2025-10-11', count: 318, totalCost: 15900 },
+      { _id: '2025-10-12', count: 283, totalCost: 14150 },
+      { _id: '2025-10-13', count: 205, totalCost: 10250 },
+      { _id: '2025-10-14', count: 192, totalCost: 9600 },
+      { _id: '2025-10-15', count: 264, totalCost: 13200 },
+      { _id: '2025-10-16', count: 287, totalCost: 14350 },
+      { _id: '2025-10-17', count: 301, totalCost: 15050 },
+      { _id: '2025-10-18', count: 325, totalCost: 16250 },
+      { _id: '2025-10-19', count: 291, totalCost: 14550 },
+      { _id: '2025-10-20', count: 210, totalCost: 10500 },
+      { _id: '2025-10-21', count: 195, totalCost: 9750 },
+      { _id: '2025-10-22', count: 272, totalCost: 13600 },
+      { _id: '2025-10-23', count: 294, totalCost: 14700 },
+      { _id: '2025-10-24', count: 308, totalCost: 15400 },
+      { _id: '2025-10-25', count: 335, totalCost: 16750 },
+      { _id: '2025-10-26', count: 298, totalCost: 14900 },
+      { _id: '2025-10-27', count: 218, totalCost: 10900 },
+      { _id: '2025-10-28', count: 203, totalCost: 10150 },
+      { _id: '2025-10-29', count: 281, totalCost: 14050 },
+      { _id: '2025-10-30', count: 305, totalCost: 15250 },
+      { _id: '2025-10-31', count: 322, totalCost: 16100 }
+    ],
+    mealsBySession: [
+      { sessionName: 'Breakfast', count: 2845, percent: 0.33 },
+      { sessionName: 'Lunch', count: 3156, percent: 0.37 },
+      { sessionName: 'Dinner', count: 2541, percent: 0.30 }
+    ],
+    mealsByDepartment: [
+      { departmentName: 'Production', count: 2156 },
+      { departmentName: 'Engineering', count: 1845 },
+      { departmentName: 'Quality Control', count: 1432 },
+      { departmentName: 'Maintenance', count: 1089 },
+      { departmentName: 'Administration', count: 876 },
+      { departmentName: 'Logistics', count: 654 },
+      { departmentName: 'HR', count: 490 }
+    ],
+    hourlyDistribution: [
+      { _id: 6, count: 145 },
+      { _id: 7, count: 892 },
+      { _id: 8, count: 1456 },
+      { _id: 9, count: 352 },
+      { _id: 12, count: 567 },
+      { _id: 13, count: 1823 },
+      { _id: 14, count: 1266 },
+      { _id: 15, count: 234 },
+      { _id: 18, count: 421 },
+      { _id: 19, count: 1342 },
+      { _id: 20, count: 1044 }
+    ],
+    mealsByShift: [
+      { shiftName: 'Morning Shift', count: 3245, totalCost: 162250 },
+      { shiftName: 'Evening Shift', count: 2867, totalCost: 143350 },
+      { shiftName: 'Night Shift', count: 2430, totalCost: 121500 }
+    ]
+  }
 
   const handleExport = (type: 'daily' | 'session' | 'department' | 'shift') => {
     let exportData: any[] = []
