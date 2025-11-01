@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import connectDB from '@/lib/db/mongoose';
 import InventoryItem from '@/lib/db/models/InventoryItem';
 import { successResponse, errorResponse, notFoundError } from '@/lib/utils/api-response';
@@ -14,10 +14,7 @@ export async function GET(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      );
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401);
     }
 
     const { id } = await params;
@@ -29,19 +26,13 @@ export async function GET(
     }).lean();
 
     if (!item) {
-      return NextResponse.json(
-        notFoundError('Inventory item not found'),
-        { status: 404 }
-      );
+      return notFoundError('Inventory item not found');
     }
 
-    return NextResponse.json(successResponse(item));
+    return successResponse(item);
   } catch (error: any) {
     console.error('Get inventory item error:', error);
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch inventory item', null, 500),
-      { status: 500 }
-    );
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch inventory item', null, 500);
   }
 }
 
@@ -55,10 +46,7 @@ export async function PUT(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      );
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401);
     }
 
     const { id } = await params;
@@ -93,27 +81,18 @@ export async function PUT(
     ).lean();
 
     if (!item) {
-      return NextResponse.json(
-        notFoundError('Inventory item not found'),
-        { status: 404 }
-      );
+      return notFoundError('Inventory item not found');
     }
 
-    return NextResponse.json(successResponse(item));
+    return successResponse(item);
   } catch (error: any) {
     console.error('Update inventory item error:', error);
 
     if (error.code === 11000) {
-      return NextResponse.json(
-        errorResponse('DUPLICATE_ERROR', 'Item code already exists', error, 400),
-        { status: 400 }
-      );
+      return errorResponse('DUPLICATE_ERROR', 'Item code already exists', error, 400);
     }
 
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to update inventory item', null, 500),
-      { status: 500 }
-    );
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to update inventory item', null, 500);
   }
 }
 
@@ -127,10 +106,7 @@ export async function DELETE(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      );
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401);
     }
 
     const { id } = await params;
@@ -143,18 +119,12 @@ export async function DELETE(
     ).lean();
 
     if (!item) {
-      return NextResponse.json(
-        notFoundError('Inventory item not found'),
-        { status: 404 }
-      );
+      return notFoundError('Inventory item not found');
     }
 
-    return NextResponse.json(successResponse({ message: 'Inventory item deleted successfully' }));
+    return successResponse({ message: 'Inventory item deleted successfully' });
   } catch (error: any) {
     console.error('Delete inventory item error:', error);
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to delete inventory item', null, 500),
-      { status: 500 }
-    );
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to delete inventory item', null, 500);
   }
 }

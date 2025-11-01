@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import connectDB from '@/lib/db/mongoose';
 import MealSession from '@/lib/db/models/MealSession';
 import { successResponse, errorResponse, notFoundError } from '@/lib/utils/api-response';
@@ -14,10 +14,7 @@ export async function GET(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      );
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401);
     }
 
     const { id } = await params;
@@ -32,10 +29,7 @@ export async function GET(
       .lean();
 
     if (!session) {
-      return NextResponse.json(
-        notFoundError('Meal session not found'),
-        { status: 404 }
-      );
+      return notFoundError('Meal session not found');
     }
 
     // Transform data to match frontend expectations
@@ -45,13 +39,10 @@ export async function GET(
       allowedShifts: session.eligibleShifts?.map((s: any) => s._id?.toString() || s) || [],
     };
 
-    return NextResponse.json(successResponse(transformedSession));
+    return successResponse(transformedSession);
   } catch (error: any) {
     console.error('Get meal session error:', error);
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch meal session', null, 500),
-      { status: 500 }
-    );
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch meal session', null, 500);
   }
 }
 
@@ -65,10 +56,7 @@ export async function PUT(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      );
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401);
     }
 
     const { id } = await params;
@@ -109,10 +97,7 @@ export async function PUT(
       .lean();
 
     if (!session) {
-      return NextResponse.json(
-        notFoundError('Meal session not found'),
-        { status: 404 }
-      );
+      return notFoundError('Meal session not found');
     }
 
     // Transform response to match frontend expectations
@@ -122,21 +107,15 @@ export async function PUT(
       allowedShifts: session.eligibleShifts?.map((s: any) => s._id?.toString() || s) || [],
     };
 
-    return NextResponse.json(successResponse(transformedSession));
+    return successResponse(transformedSession);
   } catch (error: any) {
     console.error('Update meal session error:', error);
 
     if (error.code === 11000) {
-      return NextResponse.json(
-        errorResponse('DUPLICATE_ERROR', 'Meal session code already exists', error, 400),
-        { status: 400 }
-      );
+      return errorResponse('DUPLICATE_ERROR', 'Meal session code already exists', error, 400);
     }
 
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to update meal session', null, 500),
-      { status: 500 }
-    );
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to update meal session', null, 500);
   }
 }
 
@@ -150,10 +129,7 @@ export async function DELETE(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      );
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401);
     }
 
     const { id } = await params;
@@ -166,18 +142,12 @@ export async function DELETE(
     ).lean();
 
     if (!session) {
-      return NextResponse.json(
-        notFoundError('Meal session not found'),
-        { status: 404 }
-      );
+      return notFoundError('Meal session not found');
     }
 
-    return NextResponse.json(successResponse({ message: 'Meal session deleted successfully' }));
+    return successResponse({ message: 'Meal session deleted successfully' });
   } catch (error: any) {
     console.error('Delete meal session error:', error);
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to delete meal session', null, 500),
-      { status: 500 }
-    );
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to delete meal session', null, 500);
   }
 }

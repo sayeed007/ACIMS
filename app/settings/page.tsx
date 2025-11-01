@@ -5,9 +5,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Search, Shield, Loader2, Lock } from 'lucide-react'
+import { Plus, Search, Shield, Loader2, Lock, Edit, Trash2 } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { useAccessControlRoles } from '@/hooks/useAccessControlRoles'
+import { useAccessControlRoles, useDeleteAccessControlRole, type AccessControlRole } from '@/hooks/useAccessControlRoles'
+import { RoleFormDialog } from '@/components/access-control/role-form-dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 const STATUS_COLORS = {
   true: 'bg-green-100 text-green-800',
@@ -16,13 +27,45 @@ const STATUS_COLORS = {
 
 export default function SettingsPage() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
+  const [selectedRole, setSelectedRole] = useState<AccessControlRole | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [roleToDelete, setRoleToDelete] = useState<AccessControlRole | null>(null)
 
   const { data, isLoading } = useAccessControlRoles({
     search: searchQuery || undefined,
     limit: 100,
   })
 
+  const deleteMutation = useDeleteAccessControlRole()
+
   const roles = data?.data || []
+
+  const handleNewRole = () => {
+    setDialogMode('create')
+    setSelectedRole(null)
+    setDialogOpen(true)
+  }
+
+  const handleEditRole = (role: AccessControlRole) => {
+    setDialogMode('edit')
+    setSelectedRole(role)
+    setDialogOpen(true)
+  }
+
+  const handleDeleteClick = (role: AccessControlRole) => {
+    setRoleToDelete(role)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (roleToDelete) {
+      await deleteMutation.mutateAsync(roleToDelete._id)
+      setDeleteDialogOpen(false)
+      setRoleToDelete(null)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -31,7 +74,7 @@ export default function SettingsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Access Control & Roles</h1>
           <p className="text-muted-foreground">Manage user roles and permissions</p>
         </div>
-        <Button>
+        <Button onClick={handleNewRole}>
           <Plus className="mr-2 h-4 w-4" />
           New Role
         </Button>
@@ -71,6 +114,7 @@ export default function SettingsPage() {
                   <TableHead>Permissions</TableHead>
                   <TableHead>System Role</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -98,6 +142,26 @@ export default function SettingsPage() {
                         {role.isActive ? 'Active' : 'Inactive'}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditRole(role)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        {!role.isSystemRole && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteClick(role)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -118,6 +182,35 @@ export default function SettingsPage() {
           <p>• <strong>Permissions:</strong> Granular control over view, create, update, delete, approve actions.</p>
         </CardContent>
       </Card>
+
+      {/* Role Form Dialog */}
+      <RoleFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        role={selectedRole}
+        mode={dialogMode}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Role</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the role "{roleToDelete?.roleName}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

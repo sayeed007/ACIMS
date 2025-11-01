@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import connectDB from '@/lib/db/mongoose'
 import AccessControlRule from '@/lib/db/models/AccessControlRule'
 import { successResponse, errorResponse, validationError } from '@/lib/utils/api-response'
@@ -7,7 +7,7 @@ import { getCurrentUser } from '@/lib/utils/auth-helpers'
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser()
-    if (!user) return NextResponse.json(errorResponse('UNAUTHORIZED', 'Authentication required', null, 401), { status: 401 })
+    if (!user) return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
 
     await connectDB()
 
@@ -36,28 +36,28 @@ export async function GET(request: NextRequest) {
       AccessControlRule.countDocuments(query),
     ])
 
-    return NextResponse.json(successResponse(roles, { pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } }))
+    return successResponse(roles, { pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } })
   } catch (error: any) {
-    return NextResponse.json(errorResponse('INTERNAL_ERROR', error.message, null, 500), { status: 500 })
+    return errorResponse('INTERNAL_ERROR', error.message, null, 500)
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser()
-    if (!user) return NextResponse.json(errorResponse('UNAUTHORIZED', 'Authentication required', null, 401), { status: 401 })
+    if (!user) return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
 
     const body = await request.json()
 
     if (!body.roleName) {
-      return NextResponse.json(validationError('Role name is required'), { status: 400 })
+      return validationError('Role name is required')
     }
 
     await connectDB()
 
     const existingRole = await AccessControlRule.findOne({ roleName: body.roleName, isDeleted: false })
     if (existingRole) {
-      return NextResponse.json(validationError('Role name already exists'), { status: 400 })
+      return validationError('Role name already exists')
     }
 
     const role = await AccessControlRule.create({
@@ -65,11 +65,11 @@ export async function POST(request: NextRequest) {
       createdBy: { id: user._id, name: user.name, email: user.email },
     })
 
-    return NextResponse.json(successResponse(role), { status: 201 })
+    return successResponse(role)
   } catch (error: any) {
     if (error.name === 'ValidationError') {
-      return NextResponse.json(validationError(error.message, error.errors), { status: 400 })
+      return validationError(error.message, error.errors)
     }
-    return NextResponse.json(errorResponse('INTERNAL_ERROR', error.message, null, 500), { status: 500 })
+    return errorResponse('INTERNAL_ERROR', error.message, null, 500)
   }
 }
