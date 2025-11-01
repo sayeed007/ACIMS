@@ -7,7 +7,7 @@ import { getCurrentUser } from '@/lib/utils/auth-helpers'
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser()
-    if (!user) return NextResponse.json(errorResponse('UNAUTHORIZED', 'Authentication required', null, 401), { status: 401 })
+    if (!user) return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
 
     await connectDB()
 
@@ -37,28 +37,28 @@ export async function GET(request: NextRequest) {
       Bill.countDocuments(query),
     ])
 
-    return NextResponse.json(successResponse(bills, { pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } }))
+    return successResponse(bills, { pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } })
   } catch (error: any) {
-    return NextResponse.json(errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch bills', null, 500), { status: 500 })
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch bills', null, 500)
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser()
-    if (!user) return NextResponse.json(errorResponse('UNAUTHORIZED', 'Authentication required', null, 401), { status: 401 })
+    if (!user) return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
 
     const body = await request.json()
 
     if (!body.billNumber || !body.vendor || !body.billDate || !body.dueDate || !body.totalAmount) {
-      return NextResponse.json(validationError('Bill number, vendor, dates, and amount are required'), { status: 400 })
+      return validationError('Bill number, vendor, dates, and amount are required')
     }
 
     await connectDB()
 
     const existingBill = await Bill.findOne({ billNumber: body.billNumber.toUpperCase(), isDeleted: false })
     if (existingBill) {
-      return NextResponse.json(validationError('Bill number already exists'), { status: 400 })
+      return validationError('Bill number already exists')
     }
 
     const bill = await Bill.create({
@@ -67,11 +67,11 @@ export async function POST(request: NextRequest) {
       enteredBy: { id: user._id, name: user.name, email: user.email },
     })
 
-    return NextResponse.json(successResponse(bill), { status: 201 })
+    return successResponse(bill)
   } catch (error: any) {
     if (error.name === 'ValidationError') {
-      return NextResponse.json(validationError(error.message, error.errors), { status: 400 })
+      return validationError(error.message, error.errors)
     }
-    return NextResponse.json(errorResponse('INTERNAL_ERROR', error.message || 'Failed to create bill', null, 500), { status: 500 })
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to create bill', null, 500)
   }
 }

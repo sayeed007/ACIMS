@@ -7,7 +7,7 @@ import { getCurrentUser } from '@/lib/utils/auth-helpers'
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser()
-    if (!user) return NextResponse.json(errorResponse('UNAUTHORIZED', 'Authentication required', null, 401), { status: 401 })
+    if (!user) return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
 
     await connectDB()
 
@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
       PurchaseOrder.countDocuments({ status: 'FULLY_RECEIVED', isDeleted: false }),
     ])
 
-    return NextResponse.json(successResponse({ total, draft, approved, sentToVendor, partiallyReceived, fullyReceived, pending: draft + approved }))
+    return successResponse({ total, draft, approved, sentToVendor, partiallyReceived, fullyReceived, pending: draft + approved })
   } catch (error: any) {
-    return NextResponse.json(errorResponse('INTERNAL_ERROR', error.message, null, 500), { status: 500 })
+    return errorResponse('INTERNAL_ERROR', error.message, null, 500)
   }
 }

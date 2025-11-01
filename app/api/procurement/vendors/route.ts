@@ -11,10 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      )
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
     }
 
     await connectDB()
@@ -58,22 +55,17 @@ export async function GET(request: NextRequest) {
       Vendor.countDocuments(query),
     ])
 
-    return NextResponse.json(
-      successResponse(vendors, {
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        },
-      })
-    )
+    return successResponse(vendors, {
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    })
   } catch (error: any) {
     console.error('Get vendors error:', error)
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch vendors', null, 500),
-      { status: 500 }
-    )
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch vendors', null, 500)
   }
 }
 
@@ -84,20 +76,14 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      )
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
     }
 
     const body = await request.json()
 
     // Validate required fields
     if (!body.vendorCode || !body.name || !body.category) {
-      return NextResponse.json(
-        validationError('Vendor code, name, and category are required'),
-        { status: 400 }
-      )
+      return validationError('Vendor code, name, and category are required')
     }
 
     await connectDB()
@@ -109,10 +95,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingVendor) {
-      return NextResponse.json(
-        validationError('Vendor code already exists'),
-        { status: 400 }
-      )
+      return validationError('Vendor code already exists')
     }
 
     // Create vendor
@@ -156,27 +139,18 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(successResponse(vendor), { status: 201 })
+    return successResponse(vendor)
   } catch (error: any) {
     console.error('Create vendor error:', error)
 
     if (error.name === 'ValidationError') {
-      return NextResponse.json(
-        validationError(error.message, error.errors),
-        { status: 400 }
-      )
+      return validationError(error.message, error.errors)
     }
 
     if (error.code === 11000) {
-      return NextResponse.json(
-        validationError('Vendor code already exists'),
-        { status: 400 }
-      )
+      return validationError('Vendor code already exists')
     }
 
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to create vendor', null, 500),
-      { status: 500 }
-    )
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to create vendor', null, 500)
   }
 }

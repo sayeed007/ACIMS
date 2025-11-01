@@ -11,10 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      )
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
     }
 
     await connectDB()
@@ -31,12 +28,9 @@ export async function GET(request: NextRequest) {
       inactive,
     }
 
-    return NextResponse.json(successResponse(stats))
+    return successResponse(stats)
   } catch (error: any) {
     console.error('Get eligibility rules stats error:', error)
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch stats', null, 500),
-      { status: 500 }
-    )
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch stats', null, 500)
   }
 }

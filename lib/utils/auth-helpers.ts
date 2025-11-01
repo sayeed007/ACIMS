@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { User } from '../db/models';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret';
+const SESSION_TIMEOUT = process.env.SESSION_TIMEOUT || '86400'; // Default 24 hours in seconds
 
 export interface JWTPayload {
   userId: string;
@@ -17,7 +18,7 @@ export interface JWTPayload {
  */
 export function generateToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string {
   return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: '30m', // 30 minutes
+    expiresIn: `${SESSION_TIMEOUT}s`, // Use SESSION_TIMEOUT from env (in seconds)
   });
 }
 

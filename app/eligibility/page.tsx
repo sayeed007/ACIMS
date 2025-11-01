@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Search, Shield, Loader2, CheckCircle, XCircle } from 'lucide-react'
+import { Plus, Search, Shield, Loader2, CheckCircle, XCircle, Pencil } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useEligibilityRules, useEligibilityRuleStats } from '@/hooks/useEligibilityRules'
+import { EligibilityRuleFormDialog } from '@/components/eligibility/eligibility-rule-form-dialog'
 
 const STATUS_COLORS = {
   true: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
@@ -16,16 +17,43 @@ const STATUS_COLORS = {
 
 export default function EligibilityPage() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [selectedRule, setSelectedRule] = useState<any>(null)
+  const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
 
-  const { data, isLoading } = useEligibilityRules({
+  const { data, isLoading, error } = useEligibilityRules({
     search: searchQuery || undefined,
     limit: 100,
   })
 
-  const { data: statsData, isLoading: statsLoading } = useEligibilityRuleStats()
+  const { data: statsData, isLoading: statsLoading, error: statsError } = useEligibilityRuleStats()
 
   const rules = data?.data || []
   const stats = statsData?.data || { total: 0, active: 0, inactive: 0 }
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Eligibility Rules Debug:', {
+      isLoading,
+      error,
+      data,
+      rulesCount: rules.length,
+      statsData,
+      statsError
+    })
+  }, [data, error, rules, statsData, statsError, isLoading])
+
+  const handleCreateRule = () => {
+    setSelectedRule(null)
+    setDialogMode('create')
+    setIsDialogOpen(true)
+  }
+
+  const handleEditRule = (rule: any) => {
+    setSelectedRule(rule)
+    setDialogMode('edit')
+    setIsDialogOpen(true)
+  }
 
   return (
     <div className="space-y-6">
@@ -34,7 +62,7 @@ export default function EligibilityPage() {
           <h1 className="text-3xl font-bold tracking-tight">Meal Eligibility Rules</h1>
           <p className="text-muted-foreground">Define who can access which meals and when</p>
         </div>
-        <Button>
+        <Button onClick={handleCreateRule}>
           <Plus className="mr-2 h-4 w-4" />
           New Rule
         </Button>
@@ -119,6 +147,7 @@ export default function EligibilityPage() {
                   <TableHead>Requires Attendance</TableHead>
                   <TableHead>Requires OT</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="w-[80px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -148,6 +177,15 @@ export default function EligibilityPage() {
                         {rule.isActive ? 'Active' : 'Inactive'}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditRule(rule)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -168,6 +206,13 @@ export default function EligibilityPage() {
           <p>• <strong>Applicable For:</strong> Rules can apply to specific shifts, departments, employee types, or individuals.</p>
         </CardContent>
       </Card>
+
+      <EligibilityRuleFormDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        rule={selectedRule}
+        mode={dialogMode}
+      />
     </div>
   )
 }

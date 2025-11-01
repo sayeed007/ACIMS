@@ -1,0 +1,5 @@
+ Read app\inventory\reconciliations\page.tsx the actual component
+and lib\db\seed.ts => seeder file to fill the db
+
+now the issue is though i reconciliations in seed with 1 entry and it is in DB but in UI it is not showing
+Simmilar issue i have faced and solved - can have this reference ./TROUBLESHOOTING_API_DATA_ISSUES.md

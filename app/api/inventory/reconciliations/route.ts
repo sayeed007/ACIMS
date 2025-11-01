@@ -13,10 +13,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      )
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
     }
 
     await connectDB()
@@ -62,22 +59,17 @@ export async function GET(request: NextRequest) {
       Reconciliation.countDocuments(query),
     ])
 
-    return NextResponse.json(
-      successResponse(reconciliations, {
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        },
-      })
-    )
+    return successResponse(reconciliations, {
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    })
   } catch (error: any) {
     console.error('Get reconciliations error:', error)
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch reconciliations', null, 500),
-      { status: 500 }
-    )
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch reconciliations', null, 500)
   }
 }
 
@@ -88,20 +80,14 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      )
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
     }
 
     const body = await request.json()
 
     // Validate required fields
     if (!body.itemId || body.physicalStock === undefined) {
-      return NextResponse.json(
-        validationError('Item ID and physical stock are required'),
-        { status: 400 }
-      )
+      return validationError('Item ID and physical stock are required')
     }
 
     await connectDB()
@@ -109,10 +95,7 @@ export async function POST(request: NextRequest) {
     // Get the inventory item
     const item = await InventoryItem.findById(body.itemId)
     if (!item) {
-      return NextResponse.json(
-        errorResponse('NOT_FOUND', 'Inventory item not found', null, 404),
-        { status: 404 }
-      )
+      return errorResponse('NOT_FOUND', 'Inventory item not found', null, 404)
     }
 
     // System stock is the current stock in the item
@@ -187,20 +170,14 @@ export async function POST(request: NextRequest) {
       await reconciliation.save()
     }
 
-    return NextResponse.json(successResponse(reconciliation), { status: 201 })
+    return successResponse(reconciliation)
   } catch (error: any) {
     console.error('Create reconciliation error:', error)
 
     if (error.name === 'ValidationError') {
-      return NextResponse.json(
-        validationError(error.message, error.errors),
-        { status: 400 }
-      )
+      return validationError(error.message, error.errors)
     }
 
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to create reconciliation', null, 500),
-      { status: 500 }
-    )
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to create reconciliation', null, 500)
   }
 }

@@ -82,6 +82,7 @@ export function StockMovementFormDialog({
       notes: '',
       transactionDate: new Date().toISOString().split('T')[0],
     },
+    mode: 'onChange', // Enable validation on change
   });
 
   const selectedItemId = watch('itemId');
@@ -102,13 +103,13 @@ export function StockMovementFormDialog({
         toLocation: '',
         referenceType: 'MANUAL',
         referenceNumber: '',
-        costPerUnit: selectedItem?.avgCostPerUnit || 0,
+        costPerUnit: 0,
         reason: '',
         notes: '',
         transactionDate: new Date().toISOString().split('T')[0],
       });
     }
-  }, [open, preselectedItemId, reset, selectedItem]);
+  }, [open, preselectedItemId, reset]);
 
   // Update cost per unit when item changes
   useEffect(() => {
@@ -120,11 +121,13 @@ export function StockMovementFormDialog({
   const onSubmit = async (data: CreateStockMovementData) => {
     setIsSubmitting(true);
     try {
+      console.log('Submitting stock movement:', data);
       await createMutation.mutateAsync(data);
       onOpenChange(false);
       reset();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Form submission error:', error);
+      // Error is already shown via toast from the mutation hook
     } finally {
       setIsSubmitting(false);
     }
@@ -147,20 +150,35 @@ export function StockMovementFormDialog({
               <Label htmlFor="itemId">
                 Inventory Item <span className="text-red-500">*</span>
               </Label>
+              {/* Hidden input to register the field with react-hook-form */}
+              <input
+                type="hidden"
+                {...register('itemId', { required: 'Please select an inventory item' })}
+              />
               <Select
-                value={selectedItemId}
-                onValueChange={(value) => setValue('itemId', value)}
+                value={selectedItemId && selectedItemId !== '' ? selectedItemId : undefined}
+                onValueChange={(value) => {
+                  setValue('itemId', value, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+                }}
                 disabled={!!preselectedItemId}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select inventory item" />
+                <SelectTrigger className={errors.itemId ? 'border-red-500' : ''}>
+                  <SelectValue placeholder="Select inventory item">
+                    {selectedItem ? `${selectedItem.itemCode} - ${selectedItem.name}` : 'Select inventory item'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {items.map((item: any) => (
-                    <SelectItem key={item._id} value={item._id}>
-                      {item.itemCode} - {item.name} (Stock: {item.currentStock} {item.unit})
-                    </SelectItem>
-                  ))}
+                  {items.length === 0 ? (
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                      No items available
+                    </div>
+                  ) : (
+                    items.map((item: any) => (
+                      <SelectItem key={item._id} value={item._id}>
+                        {item.itemCode} - {item.name} (Stock: {item.currentStock} {item.unit})
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               {errors.itemId && (
@@ -173,9 +191,13 @@ export function StockMovementFormDialog({
               <Label htmlFor="movementType">
                 Movement Type <span className="text-red-500">*</span>
               </Label>
+              <input
+                type="hidden"
+                {...register('movementType', { required: true })}
+              />
               <Select
-                value={selectedMovementType}
-                onValueChange={(value: any) => setValue('movementType', value)}
+                value={selectedMovementType || undefined}
+                onValueChange={(value: any) => setValue('movementType', value, { shouldValidate: true })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
@@ -202,9 +224,11 @@ export function StockMovementFormDialog({
                 id="quantity"
                 type="number"
                 step="0.01"
+                min="0.01"
                 {...register('quantity', {
                   required: 'Quantity is required',
                   valueAsNumber: true,
+                  min: { value: 0.01, message: 'Quantity must be greater than 0' },
                 })}
               />
               {errors.quantity && (
@@ -252,9 +276,13 @@ export function StockMovementFormDialog({
             {/* Reference Type */}
             <div className="space-y-2">
               <Label htmlFor="referenceType">Reference Type</Label>
+              <input
+                type="hidden"
+                {...register('referenceType')}
+              />
               <Select
-                value={selectedReferenceType}
-                onValueChange={(value: any) => setValue('referenceType', value)}
+                value={selectedReferenceType || undefined}
+                onValueChange={(value: any) => setValue('referenceType', value, { shouldValidate: true })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select reference type" />
@@ -342,7 +370,10 @@ export function StockMovementFormDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+            >
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Record Movement
             </Button>

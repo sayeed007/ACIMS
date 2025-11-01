@@ -134,7 +134,6 @@ const stockMovementSchema = new Schema<IStockMovement>(
     isDeleted: {
       type: Boolean,
       default: false,
-      select: false,
     },
   },
   {
@@ -161,8 +160,11 @@ stockMovementSchema.pre('save', function (next) {
 
 // Middleware to exclude deleted documents
 stockMovementSchema.pre(/^find/, function (next) {
-  // @ts-ignore
-  this.find({ isDeleted: { $ne: true } });
+  // Only filter if not explicitly querying for deleted items
+  const query = this.getQuery();
+  if (!('isDeleted' in query)) {
+    this.where({ isDeleted: false });
+  }
   next();
 });
 

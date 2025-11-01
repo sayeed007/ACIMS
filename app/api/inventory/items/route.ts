@@ -12,10 +12,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      );
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401);
     }
 
     await connectDB();
@@ -30,7 +27,8 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     // Build query
-    const query: any = { isDeleted: false };
+    // Note: isDeleted filter is automatically handled by model middleware
+    const query: any = {};
 
     if (search) {
       query.$or = [
@@ -62,22 +60,17 @@ export async function GET(request: NextRequest) {
       InventoryItem.countDocuments(query),
     ]);
 
-    return NextResponse.json(
-      successResponse(items, {
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        },
-      })
-    );
+    return successResponse(items, {
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (error: any) {
     console.error('Get inventory items error:', error);
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch inventory items', null, 500),
-      { status: 500 }
-    );
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch inventory items', null, 500);
   }
 }
 
@@ -88,20 +81,14 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      );
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401);
     }
 
     const body = await request.json();
 
     // Validate required fields
     if (!body.itemCode || !body.name || !body.category || !body.unit) {
-      return NextResponse.json(
-        validationError('Item code, name, category, and unit are required'),
-        { status: 400 }
-      );
+      return validationError('Item code, name, category, and unit are required');
     }
 
     await connectDB();
@@ -128,27 +115,18 @@ export async function POST(request: NextRequest) {
       updatedBy: user._id,
     });
 
-    return NextResponse.json(successResponse(newItem), { status: 201 });
+    return successResponse(newItem);
   } catch (error: any) {
     console.error('Create inventory item error:', error);
 
     if (error.code === 11000) {
-      return NextResponse.json(
-        errorResponse('DUPLICATE_ERROR', 'Item code already exists', error, 400),
-        { status: 400 }
-      );
+      return errorResponse('DUPLICATE_ERROR', 'Item code already exists', error, 400);
     }
 
     if (error.name === 'ValidationError') {
-      return NextResponse.json(
-        validationError(error.message, error.errors),
-        { status: 400 }
-      );
+      return validationError(error.message, error.errors);
     }
 
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to create inventory item', null, 500),
-      { status: 500 }
-    );
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to create inventory item', null, 500);
   }
 }

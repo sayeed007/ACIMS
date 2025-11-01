@@ -14,10 +14,7 @@ export async function GET(
   try {
     const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      )
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
     }
 
     await connectDB()
@@ -28,19 +25,13 @@ export async function GET(
     }).lean()
 
     if (!demand) {
-      return NextResponse.json(
-        errorResponse('NOT_FOUND', 'Demand not found', null, 404),
-        { status: 404 }
-      )
+      return errorResponse('NOT_FOUND', 'Demand not found', null, 404)
     }
 
-    return NextResponse.json(successResponse(demand))
+    return successResponse(demand)
   } catch (error: any) {
     console.error('Get demand error:', error)
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch demand', null, 500),
-      { status: 500 }
-    )
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch demand', null, 500)
   }
 }
 
@@ -54,10 +45,7 @@ export async function PUT(
   try {
     const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      )
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
     }
 
     const body = await request.json()
@@ -70,10 +58,7 @@ export async function PUT(
     })
 
     if (!demand) {
-      return NextResponse.json(
-        errorResponse('NOT_FOUND', 'Demand not found', null, 404),
-        { status: 404 }
-      )
+      return errorResponse('NOT_FOUND', 'Demand not found', null, 404)
     }
 
     // Update fields
@@ -87,21 +72,15 @@ export async function PUT(
 
     await demand.save()
 
-    return NextResponse.json(successResponse(demand))
+    return successResponse(demand)
   } catch (error: any) {
     console.error('Update demand error:', error)
 
     if (error.name === 'ValidationError') {
-      return NextResponse.json(
-        validationError(error.message, error.errors),
-        { status: 400 }
-      )
+      return validationError(error.message, error.errors)
     }
 
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to update demand', null, 500),
-      { status: 500 }
-    )
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to update demand', null, 500)
   }
 }
 
@@ -115,10 +94,7 @@ export async function DELETE(
   try {
     const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      )
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
     }
 
     await connectDB()
@@ -129,22 +105,16 @@ export async function DELETE(
     })
 
     if (!demand) {
-      return NextResponse.json(
-        errorResponse('NOT_FOUND', 'Demand not found', null, 404),
-        { status: 404 }
-      )
+      return errorResponse('NOT_FOUND', 'Demand not found', null, 404)
     }
 
     // Soft delete
     demand.isDeleted = true
     await demand.save()
 
-    return NextResponse.json(successResponse({ message: 'Demand deleted successfully' }))
+    return successResponse({ message: 'Demand deleted successfully' })
   } catch (error: any) {
     console.error('Delete demand error:', error)
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to delete demand', null, 500),
-      { status: 500 }
-    )
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to delete demand', null, 500)
   }
 }

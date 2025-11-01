@@ -11,7 +11,17 @@
       "Bash(node test-params.js:*)",
       "Bash(del test-params.js)",
       "Bash(Remove-Item -Force test-params.js)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(dir:*)",
+      "Bash(mkdir:*)",
+      "Bash(\"app\\api\\eligibility\\rules\\[id]\\route.ts\")",
+      "Bash(cat:*)",
+      "Bash(node test-inventory.js:*)",
+      "Bash(del test-inventory.js)",
+      "Bash(Remove-Item -Force test-inventory.js)",
+      "Bash(node test-api.js:*)",
+      "Bash(node test-api-auth.js:*)",
+      "Bash(Stop-Process -Id 27244 -Force)"
     ],
     "deny": [],
     "ask": []

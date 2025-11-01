@@ -16,10 +16,7 @@ export async function GET(
   try {
     const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      )
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
     }
 
     const { id } = await params
@@ -31,19 +28,13 @@ export async function GET(
     }).lean()
 
     if (!reconciliation) {
-      return NextResponse.json(
-        notFoundError('Reconciliation not found'),
-        { status: 404 }
-      )
+      return notFoundError('Reconciliation not found')
     }
 
-    return NextResponse.json(successResponse(reconciliation))
+    return successResponse(reconciliation)
   } catch (error: any) {
     console.error('Get reconciliation error:', error)
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch reconciliation', null, 500),
-      { status: 500 }
-    )
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch reconciliation', null, 500)
   }
 }
 
@@ -57,10 +48,7 @@ export async function PUT(
   try {
     const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      )
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
     }
 
     const { id } = await params
@@ -74,10 +62,7 @@ export async function PUT(
     })
 
     if (!reconciliation) {
-      return NextResponse.json(
-        notFoundError('Reconciliation not found'),
-        { status: 404 }
-      )
+      return notFoundError('Reconciliation not found')
     }
 
     // Only allow updating certain fields based on status
@@ -127,10 +112,7 @@ export async function PUT(
       if (!reconciliation.adjustmentReference?.adjustmentApplied && reconciliation.discrepancy !== 0) {
         const item = await InventoryItem.findById(reconciliation.item.id)
         if (!item) {
-          return NextResponse.json(
-            errorResponse('NOT_FOUND', 'Inventory item not found', null, 404),
-            { status: 404 }
-          )
+          return errorResponse('NOT_FOUND', 'Inventory item not found', null, 404)
         }
 
         // Create adjustment movement
@@ -180,13 +162,10 @@ export async function PUT(
 
     await reconciliation.save()
 
-    return NextResponse.json(successResponse(reconciliation))
+    return successResponse(reconciliation)
   } catch (error: any) {
     console.error('Update reconciliation error:', error)
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to update reconciliation', null, 500),
-      { status: 500 }
-    )
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to update reconciliation', null, 500)
   }
 }
 
@@ -200,10 +179,7 @@ export async function DELETE(
   try {
     const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      )
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
     }
 
     const { id } = await params
@@ -215,30 +191,21 @@ export async function DELETE(
     })
 
     if (!reconciliation) {
-      return NextResponse.json(
-        notFoundError('Reconciliation not found'),
-        { status: 404 }
-      )
+      return notFoundError('Reconciliation not found')
     }
 
     // Only allow deleting draft or rejected reconciliations
     if (reconciliation.status !== 'DRAFT' && reconciliation.status !== 'REJECTED') {
-      return NextResponse.json(
-        validationError('Cannot delete reconciliation in current status'),
-        { status: 400 }
-      )
+      return validationError('Cannot delete reconciliation in current status')
     }
 
     // Mark as deleted (soft delete)
     reconciliation.isDeleted = true
     await reconciliation.save()
 
-    return NextResponse.json(successResponse({ message: 'Reconciliation deleted successfully' }))
+    return successResponse({ message: 'Reconciliation deleted successfully' })
   } catch (error: any) {
     console.error('Delete reconciliation error:', error)
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to delete reconciliation', null, 500),
-      { status: 500 }
-    )
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to delete reconciliation', null, 500)
   }
 }

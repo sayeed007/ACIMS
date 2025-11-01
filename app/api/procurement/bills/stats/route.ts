@@ -7,7 +7,7 @@ import { getCurrentUser } from '@/lib/utils/auth-helpers'
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser()
-    if (!user) return NextResponse.json(errorResponse('UNAUTHORIZED', 'Authentication required', null, 401), { status: 401 })
+    if (!user) return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
 
     await connectDB()
 
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       { $group: { _id: null, total: { $sum: '$balanceAmount' } } },
     ])
 
-    return NextResponse.json(successResponse({
+    return successResponse({
       total,
       unpaid,
       partiallyPaid,
@@ -34,8 +34,8 @@ export async function GET(request: NextRequest) {
       approved,
       pendingPayments: unpaid + partiallyPaid,
       totalOutstanding: totalPayable[0]?.total || 0,
-    }))
+    })
   } catch (error: any) {
-    return NextResponse.json(errorResponse('INTERNAL_ERROR', error.message, null, 500), { status: 500 })
+    return errorResponse('INTERNAL_ERROR', error.message, null, 500)
   }
 }

@@ -14,10 +14,7 @@ export async function GET(
   try {
     const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      )
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
     }
 
     const { id } = await params
@@ -29,19 +26,13 @@ export async function GET(
     }).lean()
 
     if (!vendor) {
-      return NextResponse.json(
-        notFoundError('Vendor not found'),
-        { status: 404 }
-      )
+      return notFoundError('Vendor not found')
     }
 
-    return NextResponse.json(successResponse(vendor))
+    return successResponse(vendor)
   } catch (error: any) {
     console.error('Get vendor error:', error)
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch vendor', null, 500),
-      { status: 500 }
-    )
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch vendor', null, 500)
   }
 }
 
@@ -55,10 +46,7 @@ export async function PUT(
   try {
     const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      )
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
     }
 
     const { id } = await params
@@ -72,10 +60,7 @@ export async function PUT(
     })
 
     if (!vendor) {
-      return NextResponse.json(
-        notFoundError('Vendor not found'),
-        { status: 404 }
-      )
+      return notFoundError('Vendor not found')
     }
 
     // Check if vendor code is being changed and if it already exists
@@ -87,10 +72,7 @@ export async function PUT(
       })
 
       if (existingVendor) {
-        return NextResponse.json(
-          validationError('Vendor code already exists'),
-          { status: 400 }
-        )
+        return validationError('Vendor code already exists')
       }
     }
 
@@ -152,28 +134,19 @@ export async function PUT(
 
     await vendor.save()
 
-    return NextResponse.json(successResponse(vendor))
+    return successResponse(vendor)
   } catch (error: any) {
     console.error('Update vendor error:', error)
 
     if (error.name === 'ValidationError') {
-      return NextResponse.json(
-        validationError(error.message, error.errors),
-        { status: 400 }
-      )
+      return validationError(error.message, error.errors)
     }
 
     if (error.code === 11000) {
-      return NextResponse.json(
-        validationError('Vendor code already exists'),
-        { status: 400 }
-      )
+      return validationError('Vendor code already exists')
     }
 
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to update vendor', null, 500),
-      { status: 500 }
-    )
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to update vendor', null, 500)
   }
 }
 
@@ -187,10 +160,7 @@ export async function DELETE(
   try {
     const user = await getCurrentUser()
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      )
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401)
     }
 
     const { id } = await params
@@ -202,22 +172,16 @@ export async function DELETE(
     })
 
     if (!vendor) {
-      return NextResponse.json(
-        notFoundError('Vendor not found'),
-        { status: 404 }
-      )
+      return notFoundError('Vendor not found')
     }
 
     // Mark as deleted (soft delete)
     vendor.isDeleted = true
     await vendor.save()
 
-    return NextResponse.json(successResponse({ message: 'Vendor deleted successfully' }))
+    return successResponse({ message: 'Vendor deleted successfully' })
   } catch (error: any) {
     console.error('Delete vendor error:', error)
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to delete vendor', null, 500),
-      { status: 500 }
-    )
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to delete vendor', null, 500)
   }
 }

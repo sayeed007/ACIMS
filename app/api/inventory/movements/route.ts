@@ -5,6 +5,10 @@ import InventoryItem from '@/lib/db/models/InventoryItem';
 import { successResponse, errorResponse, validationError } from '@/lib/utils/api-response';
 import { getCurrentUser } from '@/lib/utils/auth-helpers';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 /**
  * GET /api/inventory/movements - Get all stock movements with filtering
  */
@@ -12,10 +16,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      );
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401);
     }
 
     await connectDB();
@@ -30,8 +31,8 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const skip = (page - 1) * limit;
 
-    // Build query
-    const query: any = { isDeleted: false };
+    // Build query (don't include isDeleted as the middleware handles it)
+    const query: any = {};
 
     if (itemId) {
       query['item.id'] = itemId;
@@ -57,6 +58,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Execute query with pagination
+    // The pre-find middleware automatically filters out isDeleted documents
     const [movements, total] = await Promise.all([
       StockMovement.find(query)
         .sort({ transactionDate: -1, createdAt: -1 })
@@ -66,22 +68,17 @@ export async function GET(request: NextRequest) {
       StockMovement.countDocuments(query),
     ]);
 
-    return NextResponse.json(
-      successResponse(movements, {
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        },
-      })
-    );
+    return successResponse(movements, {
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (error: any) {
     console.error('Get stock movements error:', error);
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch stock movements', null, 500),
-      { status: 500 }
-    );
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to fetch stock movements', null, 500);
   }
 }
 
@@ -92,20 +89,14 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        errorResponse('UNAUTHORIZED', 'Authentication required', null, 401),
-        { status: 401 }
-      );
+      return errorResponse('UNAUTHORIZED', 'Authentication required', null, 401);
     }
 
     const body = await request.json();
 
     // Validate required fields
     if (!body.itemId || !body.movementType || body.quantity === undefined) {
-      return NextResponse.json(
-        validationError('Item ID, movement type, and quantity are required'),
-        { status: 400 }
-      );
+      return validationError('Item ID, movement type, and quantity are required');
     }
 
     await connectDB();
@@ -113,10 +104,7 @@ export async function POST(request: NextRequest) {
     // Get the inventory item
     const item = await InventoryItem.findById(body.itemId);
     if (!item) {
-      return NextResponse.json(
-        errorResponse('NOT_FOUND', 'Inventory item not found', null, 404),
-        { status: 404 }
-      );
+      return errorResponse('NOT_FOUND', 'Inventory item not found', null, 404);
     }
 
     // Calculate stock before and after
@@ -144,10 +132,7 @@ export async function POST(request: NextRequest) {
 
     // Validate stock doesn't go negative
     if (stockAfter < 0) {
-      return NextResponse.json(
-        validationError('Insufficient stock for this movement'),
-        { status: 400 }
-      );
+      return validationError('Insufficient stock for this movement');
     }
 
     // Create stock movement
@@ -191,20 +176,14 @@ export async function POST(request: NextRequest) {
 
     await item.save();
 
-    return NextResponse.json(successResponse(movement), { status: 201 });
+    return successResponse(movement);
   } catch (error: any) {
     console.error('Create stock movement error:', error);
 
     if (error.name === 'ValidationError') {
-      return NextResponse.json(
-        validationError(error.message, error.errors),
-        { status: 400 }
-      );
+      return validationError(error.message, error.errors);
     }
 
-    return NextResponse.json(
-      errorResponse('INTERNAL_ERROR', error.message || 'Failed to create stock movement', null, 500),
-      { status: 500 }
-    );
+    return errorResponse('INTERNAL_ERROR', error.message || 'Failed to create stock movement', null, 500);
   }
 }
