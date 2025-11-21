@@ -61,6 +61,7 @@ export function useUpdateBill() {
       toast.success('Bill updated successfully!')
       queryClient.invalidateQueries({ queryKey: ['bill', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['bills'] })
+      queryClient.invalidateQueries({ queryKey: ['bill-stats'] })
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.error?.message || 'Failed to update bill')
@@ -87,6 +88,6 @@ export function useBillStats() {
   return useQuery({
     queryKey: ['bill-stats'],
     queryFn: () => api.getBillStats(),
-    staleTime: 60000,
+    staleTime: 5000, // 5 seconds
   })
 }

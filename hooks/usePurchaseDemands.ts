@@ -97,6 +97,7 @@ export function useUpdatePurchaseDemand() {
       toast.success('Purchase demand updated successfully!')
       queryClient.invalidateQueries({ queryKey: ['purchase-demand', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['purchase-demands'] })
+      queryClient.invalidateQueries({ queryKey: ['demand-stats'] })
     },
     onError: (error: any) => {
       const message = error.response?.data?.error?.message || 'Failed to update demand'
@@ -132,6 +133,6 @@ export function usePurchaseDemandStats() {
   return useQuery({
     queryKey: ['demand-stats'],
     queryFn: () => api.getDemandStats(),
-    staleTime: 60000,
+    staleTime: 5000, // 5 seconds
   })
 }

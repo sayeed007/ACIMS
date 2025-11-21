@@ -59,6 +59,7 @@ export function useUpdatePurchaseOrder() {
       toast.success('Purchase order updated successfully!')
       queryClient.invalidateQueries({ queryKey: ['purchase-order', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['po-stats'] })
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.error?.message || 'Failed to update PO')
@@ -85,6 +86,6 @@ export function usePurchaseOrderStats() {
   return useQuery({
     queryKey: ['po-stats'],
     queryFn: () => api.getPurchaseOrderStats(),
-    staleTime: 60000,
+    staleTime: 5000, // 5 seconds
   })
 }
