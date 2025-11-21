@@ -29,7 +29,7 @@ export async function GET(
     }
 
     const { id } = await params;
-    const employee = await Employee.findById(id)
+    const employee = await Employee.findOne({ _id: id, isDeleted: false })
       .populate('department.id', 'name code')
       .populate('shift.id', 'name code')
       .lean();
@@ -69,7 +69,7 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    const employee = await Employee.findById(id);
+    const employee = await Employee.findOne({ _id: id, isDeleted: false });
     if (!employee) {
       return notFoundError('Employee not found');
     }

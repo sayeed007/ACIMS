@@ -36,7 +36,8 @@ export async function GET(request: NextRequest) {
     const { page, limit, skip } = getPaginationParams(searchParams);
 
     // Build query
-    const query: any = {};
+    const query: any = { isDeleted: false }; // Exclude soft-deleted departments by default
+
     if (status) {
       query.status = status;
     }
@@ -94,8 +95,11 @@ export async function POST(request: NextRequest) {
       return validationError('Name and code are required');
     }
 
-    // Check if code already exists
-    const existingDept = await Department.findOne({ code: code.toUpperCase() });
+    // Check if code already exists (excluding soft-deleted departments)
+    const existingDept = await Department.findOne({
+      code: code.toUpperCase(),
+      isDeleted: false
+    });
     if (existingDept) {
       return conflictError('Department with this code already exists');
     }

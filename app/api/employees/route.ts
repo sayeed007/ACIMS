@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const { page, limit, skip } = getPaginationParams(searchParams);
 
     // Build query filters
-    const query: any = {};
+    const query: any = { isDeleted: false }; // Exclude soft-deleted employees by default
 
     // Filter by department
     const departmentId = searchParams.get('departmentId');
@@ -136,8 +136,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if employee ID already exists
-    const existingEmployee = await Employee.findOne({ employeeId });
+    // Check if employee ID already exists (excluding soft-deleted employees)
+    const existingEmployee = await Employee.findOne({
+      employeeId,
+      isDeleted: false
+    });
     if (existingEmployee) {
       return conflictError('Employee with this ID already exists');
     }

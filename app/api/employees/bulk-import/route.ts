@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
     const errors: ValidationError[] = [];
     const employeesToCreate: any[] = [];
     const existingEmployeeIds = new Set(
-      (await Employee.find({}).select('employeeId').lean()).map((e: any) => e.employeeId)
+      (await Employee.find({ isDeleted: false }).select('employeeId').lean()).map((e: any) => e.employeeId)
     );
 
     const validEmploymentTypes = ['PERMANENT', 'CONTRACT', 'TEMPORARY', 'VENDOR'];

@@ -100,10 +100,10 @@ export async function POST(req: NextRequest) {
     const errors: ValidationError[] = [];
     const departmentsToCreate: any[] = [];
     const existingCodes = new Set(
-      (await Department.find({}).select('code').lean()).map((d: any) => d.code.toUpperCase())
+      (await Department.find({ isDeleted: false }).select('code').lean()).map((d: any) => d.code.toUpperCase())
     );
     const existingNames = new Set(
-      (await Department.find({}).select('name').lean()).map((d: any) => d.name.toLowerCase())
+      (await Department.find({ isDeleted: false }).select('name').lean()).map((d: any) => d.name.toLowerCase())
     );
 
     const validStatuses = ['ACTIVE', 'INACTIVE'];
