@@ -74,25 +74,53 @@ export async function PUT(
       return notFoundError('Employee not found');
     }
 
-    // Update fields
+    // Update basic fields
     if (body.name) employee.name = body.name;
     if (body.email) employee.email = body.email;
     if (body.phone) employee.phone = body.phone;
     if (body.designation) employee.designation = body.designation;
     if (body.status) employee.status = body.status;
+    if (body.employmentType) employee.employmentType = body.employmentType;
+    if (body.dateOfJoining) employee.joiningDate = new Date(body.dateOfJoining);
 
-    if (body.departmentId && body.departmentName) {
-      employee.department = {
-        id: body.departmentId,
-        name: body.departmentName,
-      };
+    // Handle department update
+    if (body.departmentId) {
+      if (body.departmentName) {
+        employee.department = {
+          id: body.departmentId,
+          name: body.departmentName,
+        };
+      } else {
+        // Fetch department name from database
+        const Department = (await import('@/lib/db/models')).Department;
+        const dept = await Department.findById(body.departmentId);
+        if (dept) {
+          employee.department = {
+            id: body.departmentId,
+            name: dept.name,
+          };
+        }
+      }
     }
 
-    if (body.shiftId && body.shiftName) {
-      employee.shift = {
-        id: body.shiftId,
-        name: body.shiftName,
-      };
+    // Handle shift update
+    if (body.shiftId) {
+      if (body.shiftName) {
+        employee.shift = {
+          id: body.shiftId,
+          name: body.shiftName,
+        };
+      } else {
+        // Fetch shift name from database
+        const Shift = (await import('@/lib/db/models')).Shift;
+        const shift = await Shift.findById(body.shiftId);
+        if (shift) {
+          employee.shift = {
+            id: body.shiftId,
+            name: shift.name,
+          };
+        }
+      }
     }
 
     if (body.mealEligibility) {

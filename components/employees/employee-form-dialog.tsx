@@ -85,13 +85,22 @@ export function EmployeeFormDialog({
   useEffect(() => {
     if (open) {
       if (mode === 'edit' && employee) {
+        // Extract department and shift IDs properly
+        const deptId = typeof employee.department.id === 'object'
+          ? (employee.department.id as any)?._id
+          : employee.department.id;
+
+        const shiftIdValue = typeof employee.shift.id === 'object'
+          ? (employee.shift.id as any)?._id
+          : employee.shift.id;
+
         reset({
           employeeId: employee.employeeId,
           name: employee.name,
           email: employee.email || '',
           phone: employee.phone || '',
-          departmentId: employee.department.id as any,
-          shiftId: employee.shift.id as any,
+          departmentId: deptId || '',
+          shiftId: shiftIdValue || '',
           employmentType: employee.employmentType,
           dateOfJoining: employee.joiningDate?.split('T')[0] || new Date().toISOString().split('T')[0],
         });
@@ -273,7 +282,7 @@ export function EmployeeFormDialog({
                   <SelectItem value="PERMANENT">Permanent</SelectItem>
                   <SelectItem value="CONTRACT">Contract</SelectItem>
                   <SelectItem value="TEMPORARY">Temporary</SelectItem>
-                  <SelectItem value="VENDOR_STAFF">Vendor Staff</SelectItem>
+                  <SelectItem value="VENDOR">Vendor</SelectItem>
                 </SelectContent>
               </Select>
             </div>
