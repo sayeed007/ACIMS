@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Search, Users, Upload, Pencil, Trash2, Loader2, Filter, Download, X } from 'lucide-react'
+import { Plus, Search, Users, Upload, Pencil, Trash2, Loader2, Filter, Download, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -44,6 +44,8 @@ export default function EmployeesPage() {
   const [filterDialogOpen, setFilterDialogOpen] = useState(false)
   const [filters, setFilters] = useState<EmployeeFilters>({})
   const [isExporting, setIsExporting] = useState(false)
+  const [sortBy, setSortBy] = useState<'employeeId' | 'name'>('employeeId')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
   const { user, hasPermission } = useAuth()
 
@@ -73,6 +75,25 @@ export default function EmployeesPage() {
 
   const employees = data?.data || []
   const stats = statsData || { total: 0, active: 0, contract: 0 }
+
+  // Sort employees based on current sort settings
+  const sortedEmployees = useMemo(() => {
+    const sorted = [...employees]
+
+    sorted.sort((a, b) => {
+      let comparison = 0
+
+      if (sortBy === 'employeeId') {
+        comparison = a.employeeId.localeCompare(b.employeeId)
+      } else if (sortBy === 'name') {
+        comparison = a.name.localeCompare(b.name)
+      }
+
+      return sortOrder === 'asc' ? comparison : -comparison
+    })
+
+    return sorted
+  }, [employees, sortBy, sortOrder])
 
   // Check permissions
   const canCreateEmployee = hasPermission('employee:create') || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' || user?.role === 'HR_ADMIN'
@@ -183,6 +204,30 @@ export default function EmployeesPage() {
   const activeFiltersCount = Object.keys(filters).filter(
     (key) => filters[key as keyof EmployeeFilters]
   ).length
+
+  // Handle sorting
+  const handleSort = (column: 'employeeId' | 'name') => {
+    if (sortBy === column) {
+      // Toggle sort order if clicking the same column
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      // Set new column and default to ascending
+      setSortBy(column)
+      setSortOrder('asc')
+    }
+  }
+
+  // Get sort icon for a column
+  const getSortIcon = (column: 'employeeId' | 'name') => {
+    if (sortBy !== column) {
+      return <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground" />
+    }
+    return sortOrder === 'asc' ? (
+      <ArrowUp className="ml-2 h-4 w-4" />
+    ) : (
+      <ArrowDown className="ml-2 h-4 w-4" />
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -370,8 +415,24 @@ export default function EmployeesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Employee ID</TableHead>
-                  <TableHead>Name</TableHead>
+                  <TableHead>
+                    <button
+                      onClick={() => handleSort('employeeId')}
+                      className="flex items-center hover:text-foreground transition-colors font-medium"
+                    >
+                      Employee ID
+                      {getSortIcon('employeeId')}
+                    </button>
+                  </TableHead>
+                  <TableHead>
+                    <button
+                      onClick={() => handleSort('name')}
+                      className="flex items-center hover:text-foreground transition-colors font-medium"
+                    >
+                      Name
+                      {getSortIcon('name')}
+                    </button>
+                  </TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Department</TableHead>
                   <TableHead>Shift</TableHead>
@@ -381,7 +442,7 @@ export default function EmployeesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {employees.map((employee) => (
+                {sortedEmployees.map((employee) => (
                   <TableRow key={employee._id}>
                     <TableCell className="font-medium">{employee.employeeId}</TableCell>
                     <TableCell>{employee.name}</TableCell>
