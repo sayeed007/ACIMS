@@ -27,8 +27,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     // Build query
-    // Note: isDeleted filter is automatically handled by model middleware
-    const query: any = {};
+    const query: any = { isDeleted: false }; // Explicitly exclude soft-deleted items
 
     if (search) {
       query.$or = [
@@ -92,6 +91,15 @@ export async function POST(request: NextRequest) {
     }
 
     await connectDB();
+
+    // Check if item code already exists (excluding soft-deleted items)
+    const existingItem = await InventoryItem.findOne({
+      itemCode: body.itemCode.toUpperCase(),
+      isDeleted: false
+    });
+    if (existingItem) {
+      return errorResponse('DUPLICATE_ERROR', 'Item code already exists', null, 400);
+    }
 
     // Create inventory item with category object
     const newItem = await InventoryItem.create({
