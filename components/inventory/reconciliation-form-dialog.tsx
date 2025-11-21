@@ -22,25 +22,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useCreateReconciliation, type CreateReconciliationData } from '@/hooks/useReconciliations'
+import { useCreateReconciliation, useUpdateReconciliation, type CreateReconciliationData, type Reconciliation } from '@/hooks/useReconciliations'
 import { useInventoryItems } from '@/hooks/useInventoryItems'
 import { Loader2, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react'
 
 interface ReconciliationFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  reconciliation?: Reconciliation | null
+  mode?: 'create' | 'edit'
   preselectedItemId?: string
 }
 
 export function ReconciliationFormDialog({
   open,
   onOpenChange,
+  reconciliation,
+  mode = 'create',
   preselectedItemId,
 }: ReconciliationFormDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [autoAdjust, setAutoAdjust] = useState(false)
 
   const createMutation = useCreateReconciliation()
+  const updateMutation = useUpdateReconciliation()
 
   // Fetch inventory items for dropdown
   const { data: itemsData } = useInventoryItems({ limit: 100 })
@@ -81,27 +86,71 @@ export function ReconciliationFormDialog({
   // Reset form when dialog opens/closes
   useEffect(() => {
     if (open) {
-      reset({
-        itemId: preselectedItemId || '',
-        physicalStock: 0,
-        reconciliationDate: new Date().toISOString().split('T')[0],
-        location: '',
-        reason: '',
-        notes: '',
-        status: 'DRAFT',
-        autoAdjust: false,
-      })
-      setAutoAdjust(false)
+      if (mode === 'edit' && reconciliation) {
+        // Populate form with reconciliation data for edit mode
+        reset({
+          itemId: reconciliation.item.id,
+          physicalStock: reconciliation.physicalStock,
+          reconciliationDate: reconciliation.reconciliationDate ? new Date(reconciliation.reconciliationDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          location: reconciliation.location || '',
+          reason: reconciliation.reason || '',
+          notes: reconciliation.notes || '',
+          status: reconciliation.status as 'DRAFT' | 'SUBMITTED',
+          autoAdjust: false,
+        })
+        setAutoAdjust(false)
+      } else {
+        // Reset to defaults for create mode
+        reset({
+          itemId: preselectedItemId || '',
+          physicalStock: 0,
+          reconciliationDate: new Date().toISOString().split('T')[0],
+          location: '',
+          reason: '',
+          notes: '',
+          status: 'DRAFT',
+          autoAdjust: false,
+        })
+        setAutoAdjust(false)
+      }
     }
-  }, [open, preselectedItemId, reset])
+  }, [open, mode, reconciliation, preselectedItemId, reset])
 
   const onSubmit = async (data: CreateReconciliationData) => {
     setIsSubmitting(true)
     try {
-      await createMutation.mutateAsync({
-        ...data,
-        autoAdjust,
-      })
+      if (mode === 'edit' && reconciliation) {
+        // For DRAFT reconciliations, allow updating all fields
+        if (reconciliation.status === 'DRAFT') {
+          await updateMutation.mutateAsync({
+            id: reconciliation._id,
+            data: {
+              itemId: data.itemId,
+              physicalStock: data.physicalStock,
+              reconciliationDate: data.reconciliationDate,
+              location: data.location,
+              reason: data.reason,
+              notes: data.notes,
+              status: data.status,
+              autoAdjust,
+            },
+          })
+        } else {
+          // For other statuses, only update notes
+          await updateMutation.mutateAsync({
+            id: reconciliation._id,
+            data: {
+              notes: data.notes,
+            },
+          })
+        }
+      } else {
+        // Create new reconciliation
+        await createMutation.mutateAsync({
+          ...data,
+          autoAdjust,
+        })
+      }
       onOpenChange(false)
       reset()
     } catch (error) {
@@ -115,9 +164,13 @@ export function ReconciliationFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Stock Reconciliation</DialogTitle>
+          <DialogTitle>{mode === 'edit' ? 'Edit Stock Reconciliation' : 'Stock Reconciliation'}</DialogTitle>
           <DialogDescription>
-            Compare physical stock count with system stock and record discrepancies.
+            {mode === 'edit'
+              ? reconciliation?.status === 'DRAFT'
+                ? 'Update reconciliation details before submission.'
+                : 'Reconciliation submitted. Only notes can be updated.'
+              : 'Compare physical stock count with system stock and record discrepancies.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -131,7 +184,7 @@ export function ReconciliationFormDialog({
               <Select
                 value={selectedItemId}
                 onValueChange={(value) => setValue('itemId', value)}
-                disabled={!!preselectedItemId}
+                disabled={!!preselectedItemId || (mode === 'edit' && reconciliation?.status !== 'DRAFT')}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select inventory item" />
@@ -159,6 +212,7 @@ export function ReconciliationFormDialog({
                 id="physicalStock"
                 type="number"
                 step="0.01"
+                disabled={mode === 'edit' && reconciliation?.status !== 'DRAFT'}
                 {...register('physicalStock', {
                   required: 'Physical stock is required',
                   valueAsNumber: true,
@@ -176,6 +230,7 @@ export function ReconciliationFormDialog({
               <Input
                 id="reconciliationDate"
                 type="date"
+                disabled={mode === 'edit' && reconciliation?.status !== 'DRAFT'}
                 {...register('reconciliationDate')}
               />
             </div>
@@ -297,18 +352,20 @@ export function ReconciliationFormDialog({
           )}
 
           {/* Status */}
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select value={watch('status')} onValueChange={(value: any) => setValue('status', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="DRAFT">Save as Draft</SelectItem>
-                <SelectItem value="SUBMITTED">Submit for Review</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {(mode !== 'edit' || reconciliation?.status === 'DRAFT') && (
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={watch('status')} onValueChange={(value: any) => setValue('status', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DRAFT">Save as Draft</SelectItem>
+                  <SelectItem value="SUBMITTED">Submit for Review</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <DialogFooter>
             <Button
@@ -321,7 +378,11 @@ export function ReconciliationFormDialog({
             </Button>
             <Button type="submit" disabled={isSubmitting || !selectedItem}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {autoAdjust && watch('status') === 'SUBMITTED' ? 'Submit & Adjust' : 'Save Reconciliation'}
+              {mode === 'edit'
+                ? 'Update Reconciliation'
+                : autoAdjust && watch('status') === 'SUBMITTED'
+                ? 'Submit & Adjust'
+                : 'Save Reconciliation'}
             </Button>
           </DialogFooter>
         </form>

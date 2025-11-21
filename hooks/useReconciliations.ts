@@ -66,10 +66,15 @@ export interface CreateReconciliationData {
 }
 
 export interface UpdateReconciliationData {
+  // Fields that can be updated for DRAFT reconciliations
+  itemId?: string
   physicalStock?: number
+  reconciliationDate?: string
   location?: string
   reason?: string
   notes?: string
+  autoAdjust?: boolean
+  // Fields that can be updated for any reconciliation
   status?: 'DRAFT' | 'SUBMITTED' | 'VERIFIED' | 'APPROVED' | 'REJECTED' | 'COMPLETED'
   verify?: boolean
   approve?: boolean

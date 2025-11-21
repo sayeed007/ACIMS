@@ -16,6 +16,7 @@ import {
   Eye,
   TrendingUp,
   TrendingDown,
+  Pencil,
 } from 'lucide-react'
 import {
   Table,
@@ -65,6 +66,8 @@ export default function ReconciliationsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
+  const [selectedReconciliation, setSelectedReconciliation] = useState<Reconciliation | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [reconciliationToDelete, setReconciliationToDelete] = useState<string | null>(null)
 
@@ -103,6 +106,14 @@ export default function ReconciliationsPage() {
 
   // Handlers
   const handleCreateReconciliation = () => {
+    setDialogMode('create')
+    setSelectedReconciliation(null)
+    setDialogOpen(true)
+  }
+
+  const handleEditReconciliation = (reconciliation: Reconciliation) => {
+    setDialogMode('edit')
+    setSelectedReconciliation(reconciliation)
     setDialogOpen(true)
   }
 
@@ -369,6 +380,19 @@ export default function ReconciliationsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          {/* Edit button for DRAFT reconciliations */}
+                          {canCreateReconciliation && reconciliation.status === 'DRAFT' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditReconciliation(reconciliation)}
+                              title="Edit reconciliation"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+
+                          {/* Approve/Reject buttons for VERIFIED reconciliations */}
                           {canApproveReconciliation &&
                             reconciliation.status === 'VERIFIED' && (
                               <>
@@ -390,6 +414,8 @@ export default function ReconciliationsPage() {
                                 </Button>
                               </>
                             )}
+
+                          {/* Delete button for DRAFT/REJECTED reconciliations */}
                           {canDeleteReconciliation &&
                             (reconciliation.status === 'DRAFT' ||
                               reconciliation.status === 'REJECTED') && (
@@ -398,6 +424,7 @@ export default function ReconciliationsPage() {
                                 size="sm"
                                 onClick={() => handleDeleteClick(reconciliation._id)}
                                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                title="Delete reconciliation"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -414,7 +441,12 @@ export default function ReconciliationsPage() {
       </Card>
 
       {/* Reconciliation Form Dialog */}
-      <ReconciliationFormDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <ReconciliationFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        reconciliation={selectedReconciliation}
+        mode={dialogMode}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

@@ -65,18 +65,57 @@ export async function PUT(
       return notFoundError('Reconciliation not found')
     }
 
-    // Only allow updating certain fields based on status
-    if (reconciliation.status === 'DRAFT' || reconciliation.status === 'SUBMITTED') {
+    // For DRAFT reconciliations, allow updating all fields
+    if (reconciliation.status === 'DRAFT') {
+      if (body.itemId !== undefined) {
+        // Verify the new item exists
+        const newItem = await InventoryItem.findById(body.itemId)
+        if (!newItem) {
+          return errorResponse('NOT_FOUND', 'Inventory item not found', null, 404)
+        }
+        reconciliation.item = {
+          id: newItem._id,
+          itemCode: newItem.itemCode,
+          name: newItem.name,
+        }
+        reconciliation.unit = newItem.unit
+        // Update systemStock to reflect the new item's current stock
+        reconciliation.systemStock = newItem.currentStock
+      }
+
       if (body.physicalStock !== undefined) {
         reconciliation.physicalStock = body.physicalStock
         // Discrepancy will be recalculated by pre-save hook
       }
+
+      if (body.reconciliationDate !== undefined) {
+        reconciliation.reconciliationDate = body.reconciliationDate
+      }
+
+      if (body.location !== undefined) {
+        reconciliation.location = body.location
+      }
+
+      if (body.reason !== undefined) {
+        reconciliation.reason = body.reason
+      }
+
+      if (body.notes !== undefined) {
+        reconciliation.notes = body.notes
+      }
+    } else if (reconciliation.status === 'SUBMITTED') {
+      // For SUBMITTED reconciliations, only allow updating some fields
       if (body.location !== undefined) {
         reconciliation.location = body.location
       }
       if (body.reason !== undefined) {
         reconciliation.reason = body.reason
       }
+      if (body.notes !== undefined) {
+        reconciliation.notes = body.notes
+      }
+    } else {
+      // For other statuses, only allow updating notes
       if (body.notes !== undefined) {
         reconciliation.notes = body.notes
       }
