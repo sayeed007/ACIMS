@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Search, Package, AlertTriangle, Pencil, Trash2, Loader2 } from 'lucide-react'
+import { Plus, Search, Package, AlertTriangle, Pencil, Archive, Loader2, Upload, Download, Filter } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -31,21 +31,30 @@ import {
   type InventoryItem,
 } from '@/hooks/useInventoryItems'
 import { InventoryItemFormDialog } from '@/components/inventory/inventory-item-form-dialog'
+import { InventoryItemImportDialog } from '@/components/inventory/inventory-item-import-dialog'
+import { InventoryItemFilterDialog, type InventoryItemFilters } from '@/components/inventory/inventory-item-filter-dialog'
 import { useAuth } from '@/lib/providers/auth-provider'
+import { toast } from 'sonner'
 
 export default function InventoryItemsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [itemToDelete, setItemToDelete] = useState<string | null>(null)
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false)
+  const [itemToArchive, setItemToArchive] = useState<string | null>(null)
+  const [importDialogOpen, setImportDialogOpen] = useState(false)
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false)
+  const [filters, setFilters] = useState<InventoryItemFilters>({})
 
   const { user, hasPermission } = useAuth()
 
-  // Fetch inventory items with search filter
+  // Fetch inventory items with search filter and other filters
   const { data, isLoading, error } = useInventoryItems({
     search: searchQuery || undefined,
+    ...(filters.category && { category: filters.category }),
+    ...(filters.status && { status: filters.status }),
+    ...(filters.lowStock && { lowStock: filters.lowStock }),
     limit: 50,
   })
 
@@ -87,16 +96,68 @@ export default function InventoryItemsPage() {
     setDialogOpen(true)
   }
 
-  const handleDeleteClick = (itemId: string) => {
-    setItemToDelete(itemId)
-    setDeleteDialogOpen(true)
+  const handleArchiveClick = (itemId: string) => {
+    setItemToArchive(itemId)
+    setArchiveDialogOpen(true)
   }
 
-  const handleDeleteConfirm = async () => {
-    if (itemToDelete) {
-      await deleteMutation.mutateAsync(itemToDelete)
-      setDeleteDialogOpen(false)
-      setItemToDelete(null)
+  const handleArchiveConfirm = async () => {
+    if (itemToArchive) {
+      await deleteMutation.mutateAsync(itemToArchive)
+      setArchiveDialogOpen(false)
+      setItemToArchive(null)
+    }
+  }
+
+  const handleExport = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const queryParams = new URLSearchParams()
+
+      if (searchQuery) {
+        queryParams.append('search', searchQuery)
+      }
+      if (filters.category) {
+        queryParams.append('category', filters.category)
+      }
+      if (filters.status) {
+        queryParams.append('status', filters.status)
+      }
+      if (filters.lowStock) {
+        queryParams.append('lowStock', 'true')
+      }
+
+      const response = await fetch(`/api/inventory/items/export?${queryParams.toString()}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error?.message || 'Export failed')
+      }
+
+      // Get the blob from response
+      const blob = await response.blob()
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `inventory_items_export_${new Date().toISOString().split('T')[0]}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+
+      // Cleanup
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast.success('Inventory items exported successfully!')
+    } catch (error: any) {
+      console.error('Export error:', error)
+      toast.error(error.message || 'Failed to export inventory items')
     }
   }
 
@@ -196,8 +257,20 @@ export default function InventoryItemsPage() {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline">Filter</Button>
-            <Button variant="outline">Export</Button>
+            {canCreateItem && (
+              <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+                <Upload className="mr-2 h-4 w-4" />
+                Import
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setFilterDialogOpen(true)}>
+              <Filter className="mr-2 h-4 w-4" />
+              Filter
+            </Button>
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -286,10 +359,11 @@ export default function InventoryItemsPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleDeleteClick(item._id)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleArchiveClick(item._id)}
+                              className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                              title="Archive item"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Archive className="h-4 w-4" />
                             </Button>
                           )}
                         </div>
@@ -311,28 +385,43 @@ export default function InventoryItemsPage() {
         mode={dialogMode}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      {/* Inventory Item Import Dialog */}
+      <InventoryItemImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+      />
+
+      {/* Inventory Item Filter Dialog */}
+      <InventoryItemFilterDialog
+        open={filterDialogOpen}
+        onOpenChange={setFilterDialogOpen}
+        filters={filters}
+        onFiltersChange={setFilters}
+      />
+
+      {/* Archive Confirmation Dialog */}
+      <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Archive Inventory Item?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the inventory item. This action cannot be undone.
+              This will archive the inventory item and mark it as inactive. The item
+              will be hidden from the active list but can be restored later if needed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              className="bg-red-600 hover:bg-red-700"
+              onClick={handleArchiveConfirm}
+              className="bg-orange-600 hover:bg-orange-700"
             >
               {deleteMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
+                  Archiving...
                 </>
               ) : (
-                'Delete'
+                'Archive'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

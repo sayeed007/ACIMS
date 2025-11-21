@@ -117,7 +117,7 @@ export function useUpdateInventoryItem() {
 }
 
 /**
- * Hook to delete an inventory item (soft delete)
+ * Hook to archive an inventory item (soft delete)
  */
 export function useDeleteInventoryItem() {
   const queryClient = useQueryClient();
@@ -125,12 +125,12 @@ export function useDeleteInventoryItem() {
   return useMutation({
     mutationFn: (id: string) => api.deleteInventoryItem(id),
     onSuccess: () => {
-      toast.success('Inventory item deleted successfully!');
+      toast.success('Inventory item archived successfully!');
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-stats'] });
     },
     onError: (error: any) => {
-      const message = error.response?.data?.error?.message || 'Failed to delete inventory item';
+      const message = error.response?.data?.error?.message || 'Failed to archive inventory item';
       toast.error(message);
     },
   });
@@ -157,6 +157,47 @@ export function useInventoryStats() {
         totalValue: totalValue,
       };
     },
-    staleTime: 60000, // 1 minute
+    staleTime: 5000, // 5 seconds - short stale time ensures stats update quickly after mutations
+  });
+}
+
+/**
+ * Hook to bulk import inventory items from Excel file
+ */
+export function useBulkImportInventoryItems() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (formData: FormData) => {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/inventory/items/bulk-import', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw { response: { data } };
+      }
+
+      return data;
+    },
+    onSuccess: (response) => {
+      const imported = response.data?.imported || 0;
+      if (imported > 0) {
+        toast.success(`Successfully imported ${imported} item(s)!`);
+        // Invalidate inventory list to refresh data
+        queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
+        queryClient.invalidateQueries({ queryKey: ['inventory-stats'] });
+      }
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.error?.message || 'Failed to import inventory items';
+      toast.error(message);
+    },
   });
 }
