@@ -166,6 +166,7 @@ export function useUpdateVendor() {
       toast.success('Vendor updated successfully!')
       queryClient.invalidateQueries({ queryKey: ['vendor', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['vendors'] })
+      queryClient.invalidateQueries({ queryKey: ['vendor-stats'] })
     },
     onError: (error: any) => {
       const message = error.response?.data?.error?.message || 'Failed to update vendor'
@@ -213,6 +214,6 @@ export function useVendorStats(filters?: VendorFilters) {
         suspended: suspendedVendors.meta?.pagination?.total || 0,
       }
     },
-    staleTime: 60000, // 1 minute
+    staleTime: 5000, // 5 seconds
   })
 }
