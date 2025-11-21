@@ -98,8 +98,9 @@ export function useCreateEmployee() {
     mutationFn: (data: CreateEmployeeData) => api.createEmployee(data),
     onSuccess: (response) => {
       toast.success('Employee created successfully!');
-      // Invalidate and refetch employees list
+      // Invalidate and refetch employees list and stats
       queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
     },
     onError: (error: any) => {
       const message = error.response?.data?.error?.message || 'Failed to create employee';
@@ -122,6 +123,7 @@ export function useUpdateEmployee() {
       // Invalidate specific employee and list
       queryClient.invalidateQueries({ queryKey: ['employee', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
     },
     onError: (error: any) => {
       const message = error.response?.data?.error?.message || 'Failed to update employee';
@@ -140,8 +142,9 @@ export function useDeleteEmployee() {
     mutationFn: (id: string) => api.deleteEmployee(id),
     onSuccess: () => {
       toast.success('Employee deleted successfully!');
-      // Invalidate employees list
+      // Invalidate employees list and stats
       queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
     },
     onError: (error: any) => {
       const message = error.response?.data?.error?.message || 'Failed to delete employee';
