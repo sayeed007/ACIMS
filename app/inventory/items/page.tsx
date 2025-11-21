@@ -29,6 +29,7 @@ import {
   useDeleteInventoryItem,
   useInventoryStats,
   type InventoryItem,
+  type InventoryStats,
 } from '@/hooks/useInventoryItems'
 import { InventoryItemFormDialog } from '@/components/inventory/inventory-item-form-dialog'
 import { InventoryItemImportDialog } from '@/components/inventory/inventory-item-import-dialog'
@@ -65,7 +66,7 @@ export default function InventoryItemsPage() {
   const deleteMutation = useDeleteInventoryItem()
 
   const items = data?.data || []
-  const stats = statsData || { total: 0, lowStock: 0, totalValue: 0 }
+  const stats: InventoryStats = statsData ?? { total: 0, lowStock: 0, totalValue: 0 }
 
   // Check permissions
   const canCreateItem =

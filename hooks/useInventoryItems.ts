@@ -136,12 +136,18 @@ export function useDeleteInventoryItem() {
   });
 }
 
+export interface InventoryStats {
+  total: number;
+  lowStock: number;
+  totalValue: number;
+}
+
 /**
  * Hook to get inventory statistics
  * Uses dedicated stats endpoint for efficient server-side aggregation
  */
 export function useInventoryStats() {
-  return useQuery({
+  return useQuery<InventoryStats>({
     queryKey: ['inventory-stats'],
     queryFn: async () => {
       const response = await api.getInventoryItemStats();

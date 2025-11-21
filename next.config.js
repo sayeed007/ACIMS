@@ -4,6 +4,9 @@ const nextConfig = {
   //   ignoreDuringBuilds: true,
   // },
   images: { unoptimized: true },
+  experimental: {
+    turbopackUseSystemTlsCerts: true,
+  },
 };
 
 module.exports = nextConfig;
