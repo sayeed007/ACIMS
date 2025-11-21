@@ -3,6 +3,7 @@ import connectDB from '@/lib/db/mongoose'
 import Bill from '@/lib/db/models/Bill'
 import { successResponse, errorResponse, validationError } from '@/lib/utils/api-response'
 import { getCurrentUser } from '@/lib/utils/auth-helpers'
+import { generateNextNumber } from '@/lib/utils/number-sequence'
 
 export async function GET(request: NextRequest) {
   try {
@@ -50,20 +51,32 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
 
-    if (!body.billNumber || !body.vendor || !body.billDate || !body.dueDate || !body.totalAmount) {
-      return validationError('Bill number, vendor, dates, and amount are required')
+    if (!body.vendor || !body.billDate || !body.dueDate || !body.totalAmount) {
+      return validationError('Vendor, dates, and amount are required')
     }
 
     await connectDB()
 
-    const existingBill = await Bill.findOne({ billNumber: body.billNumber.toUpperCase(), isDeleted: false })
-    if (existingBill) {
-      return validationError('Bill number already exists')
+    // Auto-generate bill number if not provided
+    let billNumber = body.billNumber
+    if (!billNumber || billNumber.trim() === '') {
+      try {
+        billNumber = await generateNextNumber('BILL')
+      } catch (error: any) {
+        return errorResponse('INTERNAL_ERROR', `Failed to generate bill number: ${error.message}`, null, 500)
+      }
+    } else {
+      // If manual number provided, check for duplicates
+      billNumber = billNumber.toUpperCase()
+      const existingBill = await Bill.findOne({ billNumber, isDeleted: false })
+      if (existingBill) {
+        return validationError('Bill number already exists')
+      }
     }
 
     const bill = await Bill.create({
       ...body,
-      billNumber: body.billNumber.toUpperCase(),
+      billNumber,
       enteredBy: { id: user._id, name: user.name, email: user.email },
     })
 
