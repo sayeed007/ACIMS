@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Search, Users, Upload, Pencil, Trash2, Loader2 } from 'lucide-react'
+import { Plus, Search, Users, Upload, Pencil, Trash2, Loader2, Filter, Download, X } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -27,7 +27,11 @@ import {
 import { useEmployees, useDeleteEmployee, useEmployeeStats, type Employee } from '@/hooks/useEmployees'
 import { EmployeeFormDialog } from '@/components/employees/employee-form-dialog'
 import { EmployeeImportDialog } from '@/components/employees/employee-import-dialog'
+import { EmployeeFilterDialog, type EmployeeFilters } from '@/components/employees/employee-filter-dialog'
 import { useAuth } from '@/lib/providers/auth-provider'
+import { useDepartments } from '@/hooks/useDepartments'
+import { useShifts } from '@/hooks/useShifts'
+import { toast } from 'sonner'
 
 export default function EmployeesPage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -37,14 +41,28 @@ export default function EmployeesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [employeeToDelete, setEmployeeToDelete] = useState<string | null>(null)
   const [importDialogOpen, setImportDialogOpen] = useState(false)
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false)
+  const [filters, setFilters] = useState<EmployeeFilters>({})
+  const [isExporting, setIsExporting] = useState(false)
 
   const { user, hasPermission } = useAuth()
 
-  // Fetch employees with search filter (fetch all statuses, not just ACTIVE)
+  // Fetch departments and shifts for filter labels
+  const { data: departmentsData } = useDepartments({ limit: 100 })
+  const { data: shiftsData } = useShifts({ limit: 100 })
+
+  const departments = departmentsData?.data || []
+  const shifts = shiftsData?.data || []
+
+  // Fetch employees with search filter and other filters
   const { data, isLoading, error } = useEmployees({
     ...(searchQuery && { search: searchQuery }),
+    ...(filters.departmentId && { departmentId: filters.departmentId }),
+    ...(filters.shiftId && { shiftId: filters.shiftId }),
+    ...(filters.employmentType && { employmentType: filters.employmentType }),
+    ...(filters.status && { status: filters.status }),
     limit: 50,
-    status: 'all', // Pass 'all' to get employees with all statuses
+    status: filters.status || 'all', // Pass 'all' to get employees with all statuses
   })
 
   // Fetch employee statistics
@@ -86,6 +104,85 @@ export default function EmployeesPage() {
       setEmployeeToDelete(null)
     }
   }
+
+  const handleExport = async () => {
+    try {
+      setIsExporting(true)
+
+      // Build query params
+      const params = new URLSearchParams()
+      if (searchQuery) params.append('search', searchQuery)
+      if (filters.departmentId) params.append('departmentId', filters.departmentId)
+      if (filters.shiftId) params.append('shiftId', filters.shiftId)
+      if (filters.employmentType) params.append('employmentType', filters.employmentType)
+      if (filters.status) params.append('status', filters.status)
+
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/employees/export?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error?.message || 'Failed to export employees')
+      }
+
+      // Download the file
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `employees_export_${new Date().toISOString().split('T')[0]}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast.success('Employees exported successfully!')
+    } catch (error: any) {
+      console.error('Export error:', error)
+      toast.error(error.message || 'Failed to export employees')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleFiltersChange = (newFilters: EmployeeFilters) => {
+    setFilters(newFilters)
+  }
+
+  const handleClearFilter = (key: keyof EmployeeFilters) => {
+    const newFilters = { ...filters }
+    delete newFilters[key]
+    setFilters(newFilters)
+  }
+
+  const handleClearAllFilters = () => {
+    setFilters({})
+  }
+
+  const getFilterLabel = (key: keyof EmployeeFilters, value: string) => {
+    switch (key) {
+      case 'departmentId':
+        const dept = departments.find((d) => d._id === value)
+        return dept ? dept.name : 'Department'
+      case 'shiftId':
+        const shift = shifts.find((s) => s._id === value)
+        return shift ? shift.name : 'Shift'
+      case 'employmentType':
+        return value.replace('_', ' ')
+      case 'status':
+        return value
+      default:
+        return value
+    }
+  }
+
+  const activeFiltersCount = Object.keys(filters).filter(
+    (key) => filters[key as keyof EmployeeFilters]
+  ).length
 
   return (
     <div className="space-y-6">
@@ -171,18 +268,73 @@ export default function EmployeesPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search employees..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search employees..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button variant="outline" onClick={() => setFilterDialogOpen(true)}>
+                <Filter className="mr-2 h-4 w-4" />
+                Filter
+                {activeFiltersCount > 0 && (
+                  <Badge className="ml-2 bg-primary text-primary-foreground">
+                    {activeFiltersCount}
+                  </Badge>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleExport}
+                disabled={isExporting || employees.length === 0}
+              >
+                {isExporting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </>
+                )}
+              </Button>
             </div>
-            <Button variant="outline">Filter</Button>
-            <Button variant="outline">Export</Button>
+
+            {/* Active Filters */}
+            {activeFiltersCount > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm text-muted-foreground">Active filters:</span>
+                {Object.entries(filters).map(
+                  ([key, value]) =>
+                    value && (
+                      <Badge key={key} variant="secondary" className="gap-1">
+                        {getFilterLabel(key as keyof EmployeeFilters, value)}
+                        <button
+                          onClick={() => handleClearFilter(key as keyof EmployeeFilters)}
+                          className="ml-1 hover:bg-slate-300 rounded-full"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    )
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearAllFilters}
+                  className="h-6 text-xs"
+                >
+                  Clear all
+                </Button>
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -298,6 +450,14 @@ export default function EmployeesPage() {
       <EmployeeImportDialog
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
+      />
+
+      {/* Employee Filter Dialog */}
+      <EmployeeFilterDialog
+        open={filterDialogOpen}
+        onOpenChange={setFilterDialogOpen}
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
       />
 
       {/* Delete Confirmation Dialog */}
