@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Search, Users, Upload, Pencil, Trash2, Loader2, Filter, Download, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Plus, Search, Users, Upload, Pencil, Archive, Loader2, Filter, Download, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -38,8 +38,8 @@ export default function EmployeesPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [employeeToDelete, setEmployeeToDelete] = useState<string | null>(null)
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false)
+  const [employeeToArchive, setEmployeeToArchive] = useState<string | null>(null)
   const [importDialogOpen, setImportDialogOpen] = useState(false)
   const [filterDialogOpen, setFilterDialogOpen] = useState(false)
   const [filters, setFilters] = useState<EmployeeFilters>({})
@@ -113,16 +113,16 @@ export default function EmployeesPage() {
     setDialogOpen(true)
   }
 
-  const handleDeleteClick = (employeeId: string) => {
-    setEmployeeToDelete(employeeId)
-    setDeleteDialogOpen(true)
+  const handleArchiveClick = (employeeId: string) => {
+    setEmployeeToArchive(employeeId)
+    setArchiveDialogOpen(true)
   }
 
-  const handleDeleteConfirm = async () => {
-    if (employeeToDelete) {
-      await deleteMutation.mutateAsync(employeeToDelete)
-      setDeleteDialogOpen(false)
-      setEmployeeToDelete(null)
+  const handleArchiveConfirm = async () => {
+    if (employeeToArchive) {
+      await deleteMutation.mutateAsync(employeeToArchive)
+      setArchiveDialogOpen(false)
+      setEmployeeToArchive(null)
     }
   }
 
@@ -483,10 +483,11 @@ export default function EmployeesPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeleteClick(employee._id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleArchiveClick(employee._id)}
+                            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                            title="Archive employee"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Archive className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
@@ -521,28 +522,29 @@ export default function EmployeesPage() {
         onFiltersChange={handleFiltersChange}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      {/* Archive Confirmation Dialog */}
+      <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Archive Employee?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the employee record. This action cannot be undone.
+              This will archive the employee and mark them as inactive. The employee
+              will be hidden from the active list but can be restored later if needed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              className="bg-red-600 hover:bg-red-700"
+              onClick={handleArchiveConfirm}
+              className="bg-orange-600 hover:bg-orange-700"
             >
               {deleteMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
+                  Archiving...
                 </>
               ) : (
-                'Delete'
+                'Archive'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

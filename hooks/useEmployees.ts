@@ -133,7 +133,7 @@ export function useUpdateEmployee() {
 }
 
 /**
- * Hook to delete an employee (soft delete)
+ * Hook to archive an employee (soft delete)
  */
 export function useDeleteEmployee() {
   const queryClient = useQueryClient();
@@ -141,13 +141,13 @@ export function useDeleteEmployee() {
   return useMutation({
     mutationFn: (id: string) => api.deleteEmployee(id),
     onSuccess: () => {
-      toast.success('Employee deleted successfully!');
+      toast.success('Employee archived successfully!');
       // Invalidate employees list and stats
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
     },
     onError: (error: any) => {
-      const message = error.response?.data?.error?.message || 'Failed to delete employee';
+      const message = error.response?.data?.error?.message || 'Failed to archive employee';
       toast.error(message);
     },
   });
@@ -173,7 +173,7 @@ export function useEmployeeStats() {
         contract: vendorEmployees.meta?.pagination?.total || 0,
       };
     },
-    staleTime: 60000, // 1 minute
+    staleTime: 5000, // 5 seconds - short stale time ensures stats update quickly after mutations
   });
 }
 

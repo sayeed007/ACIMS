@@ -106,7 +106,7 @@ export function useUpdateDepartment() {
 }
 
 /**
- * Hook to delete a department (soft delete)
+ * Hook to archive a department (soft delete)
  */
 export function useDeleteDepartment() {
   const queryClient = useQueryClient();
@@ -114,12 +114,12 @@ export function useDeleteDepartment() {
   return useMutation({
     mutationFn: (id: string) => api.deleteDepartment(id),
     onSuccess: () => {
-      toast.success('Department deleted successfully!');
+      toast.success('Department archived successfully!');
       queryClient.invalidateQueries({ queryKey: ['departments'] });
       queryClient.invalidateQueries({ queryKey: ['department-stats'] });
     },
     onError: (error: any) => {
-      const message = error.response?.data?.error?.message || 'Failed to delete department';
+      const message = error.response?.data?.error?.message || 'Failed to archive department';
       toast.error(message);
     },
   });
@@ -142,7 +142,7 @@ export function useDepartmentStats() {
         active: activeDepts.meta?.pagination?.total || 0,
       };
     },
-    staleTime: 60000, // 1 minute
+    staleTime: 5000, // 5 seconds - short stale time ensures stats update quickly after mutations
   });
 }
 

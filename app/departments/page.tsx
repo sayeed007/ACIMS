@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Building2, Pencil, Trash2, Loader2, Upload, Download } from 'lucide-react';
+import { Plus, Search, Building2, Pencil, Archive, Loader2, Upload, Download } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -40,8 +40,8 @@ export default function DepartmentsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [departmentToDelete, setDepartmentToDelete] = useState<string | null>(null);
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+  const [departmentToArchive, setDepartmentToArchive] = useState<string | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const { user, hasPermission } = useAuth();
@@ -91,16 +91,16 @@ export default function DepartmentsPage() {
     setDialogOpen(true);
   };
 
-  const handleDeleteClick = (departmentId: string) => {
-    setDepartmentToDelete(departmentId);
-    setDeleteDialogOpen(true);
+  const handleArchiveClick = (departmentId: string) => {
+    setDepartmentToArchive(departmentId);
+    setArchiveDialogOpen(true);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (departmentToDelete) {
-      await deleteMutation.mutateAsync(departmentToDelete);
-      setDeleteDialogOpen(false);
-      setDepartmentToDelete(null);
+  const handleArchiveConfirm = async () => {
+    if (departmentToArchive) {
+      await deleteMutation.mutateAsync(departmentToArchive);
+      setArchiveDialogOpen(false);
+      setDepartmentToArchive(null);
     }
   };
 
@@ -306,10 +306,11 @@ export default function DepartmentsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeleteClick(department._id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleArchiveClick(department._id)}
+                            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                            title="Archive department"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Archive className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
@@ -336,29 +337,29 @@ export default function DepartmentsPage() {
         onOpenChange={setImportDialogOpen}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      {/* Archive Confirmation Dialog */}
+      <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Archive Department?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the department record. This action cannot
-              be undone.
+              This will archive the department and mark it as inactive. The department
+              will be hidden from the active list but can be restored later if needed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              className="bg-red-600 hover:bg-red-700"
+              onClick={handleArchiveConfirm}
+              className="bg-orange-600 hover:bg-orange-700"
             >
               {deleteMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
+                  Archiving...
                 </>
               ) : (
-                'Delete'
+                'Archive'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
