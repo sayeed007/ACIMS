@@ -21,13 +21,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useCreateStockMovement, type CreateStockMovementData } from '@/hooks/useStockMovements';
+import { useCreateStockMovement, useUpdateStockMovement, type CreateStockMovementData, type StockMovement } from '@/hooks/useStockMovements';
 import { useInventoryItems } from '@/hooks/useInventoryItems';
 import { Loader2 } from 'lucide-react';
 
 interface StockMovementFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  movement?: StockMovement | null;
+  mode?: 'create' | 'edit';
   preselectedItemId?: string;
 }
 
@@ -51,11 +53,14 @@ const REFERENCE_TYPES = [
 export function StockMovementFormDialog({
   open,
   onOpenChange,
+  movement,
+  mode = 'create',
   preselectedItemId,
 }: StockMovementFormDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createMutation = useCreateStockMovement();
+  const updateMutation = useUpdateStockMovement();
 
   // Fetch inventory items for dropdown
   const { data: itemsData } = useInventoryItems({ limit: 100 });
@@ -95,21 +100,39 @@ export function StockMovementFormDialog({
   // Reset form when dialog opens/closes
   useEffect(() => {
     if (open) {
-      reset({
-        itemId: preselectedItemId || '',
-        movementType: 'IN',
-        quantity: 0,
-        fromLocation: '',
-        toLocation: '',
-        referenceType: 'MANUAL',
-        referenceNumber: '',
-        costPerUnit: 0,
-        reason: '',
-        notes: '',
-        transactionDate: new Date().toISOString().split('T')[0],
-      });
+      if (mode === 'edit' && movement) {
+        // Populate form with movement data for edit mode
+        reset({
+          itemId: movement.item.id,
+          movementType: movement.movementType,
+          quantity: movement.quantity,
+          fromLocation: movement.fromLocation || '',
+          toLocation: movement.toLocation || '',
+          referenceType: movement.referenceType || 'MANUAL',
+          referenceNumber: movement.referenceNumber || '',
+          costPerUnit: movement.costPerUnit || 0,
+          reason: movement.reason || '',
+          notes: movement.notes || '',
+          transactionDate: movement.transactionDate ? new Date(movement.transactionDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        });
+      } else {
+        // Reset to defaults for create mode
+        reset({
+          itemId: preselectedItemId || '',
+          movementType: 'IN',
+          quantity: 0,
+          fromLocation: '',
+          toLocation: '',
+          referenceType: 'MANUAL',
+          referenceNumber: '',
+          costPerUnit: 0,
+          reason: '',
+          notes: '',
+          transactionDate: new Date().toISOString().split('T')[0],
+        });
+      }
     }
-  }, [open, preselectedItemId, reset]);
+  }, [open, mode, movement, preselectedItemId, reset]);
 
   // Update cost per unit when item changes
   useEffect(() => {
@@ -121,8 +144,19 @@ export function StockMovementFormDialog({
   const onSubmit = async (data: CreateStockMovementData) => {
     setIsSubmitting(true);
     try {
-      console.log('Submitting stock movement:', data);
-      await createMutation.mutateAsync(data);
+      if (mode === 'edit' && movement) {
+        // Update only notes for edit mode (as per typical stock movement constraints)
+        await updateMutation.mutateAsync({
+          id: movement._id,
+          data: {
+            notes: data.notes,
+            // Other fields could be added here if business logic allows editing them
+          },
+        });
+      } else {
+        // Create new movement
+        await createMutation.mutateAsync(data);
+      }
       onOpenChange(false);
       reset();
     } catch (error: any) {
@@ -137,9 +171,11 @@ export function StockMovementFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Record Stock Movement</DialogTitle>
+          <DialogTitle>{mode === 'edit' ? 'Edit Stock Movement' : 'Record Stock Movement'}</DialogTitle>
           <DialogDescription>
-            Record incoming, outgoing, or adjustment of inventory stock.
+            {mode === 'edit'
+              ? 'Update notes and details for this stock movement.'
+              : 'Record incoming, outgoing, or adjustment of inventory stock.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -160,7 +196,7 @@ export function StockMovementFormDialog({
                 onValueChange={(value) => {
                   setValue('itemId', value, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
                 }}
-                disabled={!!preselectedItemId}
+                disabled={!!preselectedItemId || mode === 'edit'}
               >
                 <SelectTrigger className={errors.itemId ? 'border-red-500' : ''}>
                   <SelectValue placeholder="Select inventory item">
@@ -198,6 +234,7 @@ export function StockMovementFormDialog({
               <Select
                 value={selectedMovementType || undefined}
                 onValueChange={(value: any) => setValue('movementType', value, { shouldValidate: true })}
+                disabled={mode === 'edit'}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
@@ -225,6 +262,7 @@ export function StockMovementFormDialog({
                 type="number"
                 step="0.01"
                 min="0.01"
+                disabled={mode === 'edit'}
                 {...register('quantity', {
                   required: 'Quantity is required',
                   valueAsNumber: true,
@@ -375,7 +413,7 @@ export function StockMovementFormDialog({
               disabled={isSubmitting}
             >
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Record Movement
+              {mode === 'edit' ? 'Update Movement' : 'Record Movement'}
             </Button>
           </DialogFooter>
         </form>

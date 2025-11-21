@@ -12,7 +12,7 @@ import {
   TrendingDown,
   ArrowRightLeft,
   Loader2,
-  Eye,
+  Pencil,
   Trash2,
   Filter,
   Download,
@@ -71,6 +71,8 @@ export default function StockMovementsPage() {
   const [movementTypeFilter, setMovementTypeFilter] = useState<string>('')
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
+  const [selectedMovement, setSelectedMovement] = useState<StockMovement | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [movementToDelete, setMovementToDelete] = useState<string | null>(null)
 
@@ -98,6 +100,11 @@ export default function StockMovementsPage() {
     user?.role === 'ADMIN' ||
     user?.role === 'SUPER_ADMIN' ||
     user?.role === 'STORE_KEEPER'
+  const canEditMovement =
+    hasPermission('inventory:update') ||
+    user?.role === 'ADMIN' ||
+    user?.role === 'SUPER_ADMIN' ||
+    user?.role === 'STORE_KEEPER'
   const canDeleteMovement =
     hasPermission('inventory:delete') ||
     user?.role === 'ADMIN' ||
@@ -105,6 +112,14 @@ export default function StockMovementsPage() {
 
   // Handlers
   const handleRecordMovement = () => {
+    setDialogMode('create')
+    setSelectedMovement(null)
+    setDialogOpen(true)
+  }
+
+  const handleEditMovement = (movement: StockMovement) => {
+    setDialogMode('edit')
+    setSelectedMovement(movement)
     setDialogOpen(true)
   }
 
@@ -377,12 +392,23 @@ export default function StockMovementsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          {canEditMovement && movement.status === 'PENDING' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditMovement(movement)}
+                              title="Edit movement"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
                           {canDeleteMovement && movement.status === 'PENDING' && (
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteClick(movement._id)}
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              title="Delete movement"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -399,7 +425,12 @@ export default function StockMovementsPage() {
       </Card>
 
       {/* Stock Movement Form Dialog */}
-      <StockMovementFormDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <StockMovementFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        movement={selectedMovement}
+        mode={dialogMode}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
