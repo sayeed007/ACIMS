@@ -103,6 +103,7 @@ export function useCreateStockMovement() {
     onSuccess: () => {
       toast.success('Stock movement recorded successfully!');
       queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
+      queryClient.invalidateQueries({ queryKey: ['stock-movement-stats'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-stats'] });
     },
@@ -126,6 +127,7 @@ export function useUpdateStockMovement() {
       toast.success('Stock movement updated successfully!');
       queryClient.invalidateQueries({ queryKey: ['stock-movement', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
+      queryClient.invalidateQueries({ queryKey: ['stock-movement-stats'] });
     },
     onError: (error: any) => {
       const message = error.response?.data?.error?.message || 'Failed to update stock movement';
@@ -145,6 +147,7 @@ export function useDeleteStockMovement() {
     onSuccess: () => {
       toast.success('Stock movement deleted successfully!');
       queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
+      queryClient.invalidateQueries({ queryKey: ['stock-movement-stats'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-stats'] });
     },
@@ -174,6 +177,6 @@ export function useStockMovementStats(filters?: StockMovementFilters) {
         out: outMovements.meta?.pagination?.total || 0,
       };
     },
-    staleTime: 60000, // 1 minute
+    staleTime: 5000, // 5 seconds - short stale time ensures stats update quickly after mutations
   });
 }
