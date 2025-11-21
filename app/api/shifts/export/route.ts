@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db/mongoose';
 import { Shift } from '@/lib/db/models';
 import { getCurrentUser } from '@/lib/utils/auth-helpers';
-import XLSX from 'xlsx';
+import * as XLSX from 'xlsx';
 
 /**
  * GET /api/shifts/export
