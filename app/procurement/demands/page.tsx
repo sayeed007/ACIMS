@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Search, FileText, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
+import { Plus, Search, FileText, Loader2, AlertCircle, CheckCircle, Pencil, Send } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { usePurchaseDemands, usePurchaseDemandStats } from '@/hooks/usePurchaseDemands'
+import { usePurchaseDemands, usePurchaseDemandStats, useUpdatePurchaseDemand } from '@/hooks/usePurchaseDemands'
 import { DemandFormDialog } from '@/components/procurement/demand-form-dialog'
 import { format } from 'date-fns'
 
@@ -33,6 +33,7 @@ export default function PurchaseDemandsPage() {
   })
 
   const { data: statsData, isLoading: statsLoading } = usePurchaseDemandStats()
+  const updateMutation = useUpdatePurchaseDemand()
 
   const demands = data?.data || []
   const stats = (statsData?.data as any) || { total: 0, draft: 0, submitted: 0, approved: 0 }
@@ -47,6 +48,13 @@ export default function PurchaseDemandsPage() {
     setSelectedDemand(demand)
     setFormMode('edit')
     setFormOpen(true)
+  }
+
+  const handleSubmit = async (demandId: string) => {
+    await updateMutation.mutateAsync({
+      id: demandId,
+      data: { finalStatus: 'SUBMITTED' },
+    })
   }
 
   return (
@@ -155,6 +163,7 @@ export default function PurchaseDemandsPage() {
                   <TableHead>Items</TableHead>
                   <TableHead>Created By</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -169,6 +178,34 @@ export default function PurchaseDemandsPage() {
                       <Badge className={STATUS_COLORS[demand.finalStatus as keyof typeof STATUS_COLORS]}>
                         {demand.finalStatus}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        {/* Edit button for DRAFT demands */}
+                        {demand.finalStatus === 'DRAFT' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(demand)}
+                            title="Edit demand"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+
+                        {/* Submit for Approval button for DRAFT demands */}
+                        {demand.finalStatus === 'DRAFT' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSubmit(demand._id)}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            title="Submit for approval"
+                          >
+                            <Send className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
