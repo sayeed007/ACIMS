@@ -16,6 +16,7 @@ import {
   Trash2,
   Filter,
   Download,
+  CheckCircle,
 } from 'lucide-react'
 import {
   Table,
@@ -45,6 +46,7 @@ import {
 import {
   useStockMovements,
   useDeleteStockMovement,
+  useUpdateStockMovement,
   useStockMovementStats,
   type StockMovement,
 } from '@/hooks/useStockMovements'
@@ -89,8 +91,9 @@ export default function StockMovementsPage() {
   // Fetch movement statistics
   const { data: statsData, isLoading: statsLoading } = useStockMovementStats()
 
-  // Delete mutation
+  // Mutations
   const deleteMutation = useDeleteStockMovement()
+  const updateMutation = useUpdateStockMovement()
 
   const movements = data?.data || []
   const stats = statsData || { total: 0, in: 0, out: 0 }
@@ -111,6 +114,17 @@ export default function StockMovementsPage() {
     setDialogMode('edit')
     setSelectedMovement(movement)
     setDialogOpen(true)
+  }
+
+  const handleCompleteMovement = async (movementId: string) => {
+    try {
+      await updateMutation.mutateAsync({
+        id: movementId,
+        data: { status: 'COMPLETED' },
+      })
+    } catch (error) {
+      // Error is already shown by mutation hook
+    }
   }
 
   const handleDeleteClick = (movementId: string) => {
@@ -383,14 +397,25 @@ export default function StockMovementsPage() {
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           {canEditMovement && movement.status === 'PENDING' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditMovement(movement)}
-                              title="Edit movement"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditMovement(movement)}
+                                title="Edit movement"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleCompleteMovement(movement._id)}
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                title="Complete movement and update stock"
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                              </Button>
+                            </>
                           )}
                           {canDeleteMovement && movement.status === 'PENDING' && (
                             <Button

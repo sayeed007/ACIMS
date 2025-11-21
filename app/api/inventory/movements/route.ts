@@ -111,28 +111,37 @@ export async function POST(request: NextRequest) {
     const stockBefore = item.currentStock;
     let stockAfter = stockBefore;
 
-    // Calculate stock changes based on movement type
-    switch (body.movementType) {
-      case 'IN':
-      case 'RETURN':
-        stockAfter = stockBefore + Math.abs(body.quantity);
-        break;
-      case 'OUT':
-        stockAfter = stockBefore - Math.abs(body.quantity);
-        break;
-      case 'ADJUSTMENT':
-        // For adjustments, quantity can be positive or negative
-        stockAfter = stockBefore + body.quantity;
-        break;
-      case 'TRANSFER':
-        // For transfers, this is the "from" location, so it's OUT
-        stockAfter = stockBefore - Math.abs(body.quantity);
-        break;
-    }
+    // Determine initial status (default to PENDING for user-created movements)
+    const status = body.status || 'PENDING';
 
-    // Validate stock doesn't go negative
-    if (stockAfter < 0) {
-      return validationError('Insufficient stock for this movement');
+    // Only calculate stock changes and update inventory if status is COMPLETED
+    if (status === 'COMPLETED') {
+      // Calculate stock changes based on movement type
+      switch (body.movementType) {
+        case 'IN':
+        case 'RETURN':
+          stockAfter = stockBefore + Math.abs(body.quantity);
+          break;
+        case 'OUT':
+          stockAfter = stockBefore - Math.abs(body.quantity);
+          break;
+        case 'ADJUSTMENT':
+          // For adjustments, quantity can be positive or negative
+          stockAfter = stockBefore + body.quantity;
+          break;
+        case 'TRANSFER':
+          // For transfers, this is the "from" location, so it's OUT
+          stockAfter = stockBefore - Math.abs(body.quantity);
+          break;
+      }
+
+      // Validate stock doesn't go negative
+      if (stockAfter < 0) {
+        return validationError('Insufficient stock for this movement');
+      }
+    } else {
+      // For PENDING movements, stockAfter equals stockBefore (no change yet)
+      stockAfter = stockBefore;
     }
 
     // Create stock movement
@@ -160,21 +169,23 @@ export async function POST(request: NextRequest) {
         name: user.name,
         email: user.email,
       },
-      status: body.status || 'COMPLETED',
+      status,
       transactionDate: body.transactionDate || new Date(),
     });
 
-    // Update inventory item stock
-    item.currentStock = stockAfter;
+    // Only update inventory item stock if status is COMPLETED
+    if (status === 'COMPLETED') {
+      item.currentStock = stockAfter;
 
-    // Update average cost if provided and movement is IN
-    if (body.costPerUnit && (body.movementType === 'IN' || body.movementType === 'RETURN')) {
-      const totalQuantity = item.currentStock;
-      const totalCost = (stockBefore * item.avgCostPerUnit) + (Math.abs(body.quantity) * body.costPerUnit);
-      item.avgCostPerUnit = totalCost / totalQuantity;
+      // Update average cost if provided and movement is IN
+      if (body.costPerUnit && (body.movementType === 'IN' || body.movementType === 'RETURN')) {
+        const totalQuantity = item.currentStock;
+        const totalCost = (stockBefore * item.avgCostPerUnit) + (Math.abs(body.quantity) * body.costPerUnit);
+        item.avgCostPerUnit = totalCost / totalQuantity;
+      }
+
+      await item.save();
     }
-
-    await item.save();
 
     return successResponse(movement);
   } catch (error: any) {

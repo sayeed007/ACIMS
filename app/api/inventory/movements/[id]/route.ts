@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db/mongoose';
 import StockMovement from '@/lib/db/models/StockMovement';
-import { successResponse, errorResponse, notFoundError } from '@/lib/utils/api-response';
+import InventoryItem from '@/lib/db/models/InventoryItem';
+import { successResponse, errorResponse, notFoundError, validationError } from '@/lib/utils/api-response';
 import { getCurrentUser } from '@/lib/utils/auth-helpers';
 
 /**
@@ -58,6 +59,9 @@ export async function PUT(
       return notFoundError('Stock movement not found');
     }
 
+    // Store old status to detect changes
+    const oldStatus = movement.status;
+
     // Only allow updating certain fields
     if (body.notes !== undefined) {
       movement.notes = body.notes;
@@ -76,6 +80,53 @@ export async function PUT(
         email: user.email,
         approvedAt: new Date(),
       };
+    }
+
+    // If status changed to COMPLETED, update inventory stock
+    if (oldStatus !== 'COMPLETED' && movement.status === 'COMPLETED') {
+      // Get the inventory item
+      const item = await InventoryItem.findById(movement.item.id);
+      if (!item) {
+        return errorResponse('NOT_FOUND', 'Inventory item not found', null, 404);
+      }
+
+      // Calculate new stock based on movement type
+      let newStock = item.currentStock;
+      switch (movement.movementType) {
+        case 'IN':
+        case 'RETURN':
+          newStock = item.currentStock + Math.abs(movement.quantity);
+          break;
+        case 'OUT':
+          newStock = item.currentStock - Math.abs(movement.quantity);
+          break;
+        case 'ADJUSTMENT':
+          newStock = item.currentStock + movement.quantity;
+          break;
+        case 'TRANSFER':
+          newStock = item.currentStock - Math.abs(movement.quantity);
+          break;
+      }
+
+      // Validate stock doesn't go negative
+      if (newStock < 0) {
+        return validationError('Insufficient stock for this movement');
+      }
+
+      // Update stockAfter in movement
+      movement.stockAfter = newStock;
+
+      // Update inventory item
+      item.currentStock = newStock;
+
+      // Update average cost if cost provided and movement is IN
+      if (movement.costPerUnit && (movement.movementType === 'IN' || movement.movementType === 'RETURN')) {
+        const totalQuantity = item.currentStock;
+        const totalCost = (movement.stockBefore * item.avgCostPerUnit) + (Math.abs(movement.quantity) * movement.costPerUnit);
+        item.avgCostPerUnit = totalCost / totalQuantity;
+      }
+
+      await item.save();
     }
 
     await movement.save();
