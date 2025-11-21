@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Building2, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Search, Building2, Pencil, Trash2, Loader2, Upload, Download } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -31,7 +31,9 @@ import {
   type Department,
 } from '@/hooks/useDepartments';
 import { DepartmentFormDialog } from '@/components/departments/department-form-dialog';
+import { DepartmentImportDialog } from '@/components/departments/department-import-dialog';
 import { useAuth } from '@/lib/providers/auth-provider';
+import { toast } from 'sonner';
 
 export default function DepartmentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,6 +42,7 @@ export default function DepartmentsPage() {
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [departmentToDelete, setDepartmentToDelete] = useState<string | null>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const { user, hasPermission } = useAuth();
 
@@ -98,6 +101,49 @@ export default function DepartmentsPage() {
       await deleteMutation.mutateAsync(departmentToDelete);
       setDeleteDialogOpen(false);
       setDepartmentToDelete(null);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const queryParams = new URLSearchParams();
+
+      if (searchQuery) {
+        queryParams.append('search', searchQuery);
+      }
+
+      const response = await fetch(`/api/departments/export?${queryParams.toString()}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Export failed');
+      }
+
+      // Get the blob from response
+      const blob = await response.blob();
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `departments_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success('Departments exported successfully!');
+    } catch (error: any) {
+      console.error('Export error:', error);
+      toast.error(error.message || 'Failed to export departments');
     }
   };
 
@@ -173,7 +219,16 @@ export default function DepartmentsPage() {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline">Export</Button>
+            {canCreateDepartment && (
+              <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+                <Upload className="mr-2 h-4 w-4" />
+                Import
+              </Button>
+            )}
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -273,6 +328,12 @@ export default function DepartmentsPage() {
         onOpenChange={setDialogOpen}
         department={selectedDepartment}
         mode={dialogMode}
+      />
+
+      {/* Department Import Dialog */}
+      <DepartmentImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
       />
 
       {/* Delete Confirmation Dialog */}

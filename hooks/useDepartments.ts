@@ -74,6 +74,7 @@ export function useCreateDepartment() {
     onSuccess: () => {
       toast.success('Department created successfully!');
       queryClient.invalidateQueries({ queryKey: ['departments'] });
+      queryClient.invalidateQueries({ queryKey: ['department-stats'] });
     },
     onError: (error: any) => {
       const message = error.response?.data?.error?.message || 'Failed to create department';
@@ -95,6 +96,7 @@ export function useUpdateDepartment() {
       toast.success('Department updated successfully!');
       queryClient.invalidateQueries({ queryKey: ['department', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['departments'] });
+      queryClient.invalidateQueries({ queryKey: ['department-stats'] });
     },
     onError: (error: any) => {
       const message = error.response?.data?.error?.message || 'Failed to update department';
@@ -114,6 +116,7 @@ export function useDeleteDepartment() {
     onSuccess: () => {
       toast.success('Department deleted successfully!');
       queryClient.invalidateQueries({ queryKey: ['departments'] });
+      queryClient.invalidateQueries({ queryKey: ['department-stats'] });
     },
     onError: (error: any) => {
       const message = error.response?.data?.error?.message || 'Failed to delete department';
@@ -140,5 +143,46 @@ export function useDepartmentStats() {
       };
     },
     staleTime: 60000, // 1 minute
+  });
+}
+
+/**
+ * Hook to bulk import departments from Excel file
+ */
+export function useBulkImportDepartments() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (formData: FormData) => {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/departments/bulk-import', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw { response: { data } };
+      }
+
+      return data;
+    },
+    onSuccess: (response) => {
+      const successCount = response.data?.successCount || 0;
+      if (successCount > 0) {
+        toast.success(`Successfully imported ${successCount} department(s)!`);
+        // Invalidate departments list to refresh data
+        queryClient.invalidateQueries({ queryKey: ['departments'] });
+        queryClient.invalidateQueries({ queryKey: ['department-stats'] });
+      }
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.error?.message || 'Failed to import departments';
+      toast.error(message);
+    },
   });
 }
