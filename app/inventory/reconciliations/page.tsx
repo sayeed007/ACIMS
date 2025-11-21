@@ -17,6 +17,7 @@ import {
   TrendingUp,
   TrendingDown,
   Pencil,
+  Send,
 } from 'lucide-react'
 import {
   Table,
@@ -141,6 +142,13 @@ export default function ReconciliationsPage() {
     await updateMutation.mutateAsync({
       id: reconciliationId,
       data: { reject: true },
+    })
+  }
+
+  const handleSubmit = async (reconciliationId: string) => {
+    await updateMutation.mutateAsync({
+      id: reconciliationId,
+      data: { status: 'SUBMITTED' },
     })
   }
 
@@ -389,6 +397,19 @@ export default function ReconciliationsPage() {
                               title="Edit reconciliation"
                             >
                               <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+
+                          {/* Submit for Review button for DRAFT reconciliations */}
+                          {canCreateReconciliation && reconciliation.status === 'DRAFT' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleSubmit(reconciliation._id)}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              title="Submit for review"
+                            >
+                              <Send className="h-4 w-4" />
                             </Button>
                           )}
 
