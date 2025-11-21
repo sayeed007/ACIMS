@@ -65,6 +65,18 @@ export interface CreateStockMovementData {
 }
 
 export interface UpdateStockMovementData {
+  // Fields that can be updated for PENDING movements
+  itemId?: string;
+  movementType?: 'IN' | 'OUT' | 'ADJUSTMENT' | 'TRANSFER' | 'RETURN';
+  quantity?: number;
+  fromLocation?: string;
+  toLocation?: string;
+  referenceType?: 'PURCHASE_ORDER' | 'CONSUMPTION' | 'MANUAL' | 'TRANSFER' | 'RETURN' | 'RECONCILIATION';
+  referenceNumber?: string;
+  costPerUnit?: number;
+  reason?: string;
+  transactionDate?: string;
+  // Fields that can be updated for any movement
   notes?: string;
   status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'COMPLETED';
   approve?: boolean;

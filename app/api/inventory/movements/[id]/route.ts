@@ -62,11 +62,69 @@ export async function PUT(
     // Store old status to detect changes
     const oldStatus = movement.status;
 
-    // Only allow updating certain fields
+    // For PENDING movements, allow updating all fields
+    if (movement.status === 'PENDING') {
+      if (body.itemId !== undefined) {
+        // Verify the new item exists
+        const newItem = await InventoryItem.findById(body.itemId);
+        if (!newItem) {
+          return errorResponse('NOT_FOUND', 'Inventory item not found', null, 404);
+        }
+        movement.item = {
+          id: newItem._id,
+          itemCode: newItem.itemCode,
+          name: newItem.name,
+        };
+        movement.unit = newItem.unit;
+        // Update stockBefore to reflect the new item's current stock
+        movement.stockBefore = newItem.currentStock;
+        movement.stockAfter = newItem.currentStock; // For PENDING, stockAfter equals stockBefore
+      }
+
+      if (body.movementType !== undefined) {
+        movement.movementType = body.movementType;
+      }
+
+      if (body.quantity !== undefined) {
+        movement.quantity = body.quantity;
+      }
+
+      if (body.fromLocation !== undefined) {
+        movement.fromLocation = body.fromLocation;
+      }
+
+      if (body.toLocation !== undefined) {
+        movement.toLocation = body.toLocation;
+      }
+
+      if (body.referenceType !== undefined) {
+        movement.referenceType = body.referenceType;
+      }
+
+      if (body.referenceNumber !== undefined) {
+        movement.referenceNumber = body.referenceNumber;
+      }
+
+      if (body.costPerUnit !== undefined) {
+        movement.costPerUnit = body.costPerUnit;
+        movement.totalCost = body.costPerUnit * movement.quantity;
+      }
+
+      if (body.reason !== undefined) {
+        movement.reason = body.reason;
+      }
+
+      if (body.transactionDate !== undefined) {
+        movement.transactionDate = body.transactionDate;
+      }
+    }
+
+    // Notes can be updated for any movement
     if (body.notes !== undefined) {
       movement.notes = body.notes;
     }
 
+    // Status can be updated for any movement
     if (body.status !== undefined) {
       movement.status = body.status;
     }
@@ -89,6 +147,9 @@ export async function PUT(
       if (!item) {
         return errorResponse('NOT_FOUND', 'Inventory item not found', null, 404);
       }
+
+      // Update stockBefore to reflect current stock at completion time
+      movement.stockBefore = item.currentStock;
 
       // Calculate new stock based on movement type
       let newStock = item.currentStock;

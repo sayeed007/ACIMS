@@ -145,14 +145,34 @@ export function StockMovementFormDialog({
     setIsSubmitting(true);
     try {
       if (mode === 'edit' && movement) {
-        // Update only notes for edit mode (as per typical stock movement constraints)
-        await updateMutation.mutateAsync({
-          id: movement._id,
-          data: {
-            notes: data.notes,
-            // Other fields could be added here if business logic allows editing them
-          },
-        });
+        // For PENDING movements, allow updating all fields
+        // For COMPLETED movements, only allow updating notes
+        if (movement.status === 'PENDING') {
+          await updateMutation.mutateAsync({
+            id: movement._id,
+            data: {
+              itemId: data.itemId,
+              movementType: data.movementType,
+              quantity: data.quantity,
+              fromLocation: data.fromLocation,
+              toLocation: data.toLocation,
+              referenceType: data.referenceType,
+              referenceNumber: data.referenceNumber,
+              costPerUnit: data.costPerUnit,
+              reason: data.reason,
+              notes: data.notes,
+              transactionDate: data.transactionDate,
+            },
+          });
+        } else {
+          // For COMPLETED movements, only update notes
+          await updateMutation.mutateAsync({
+            id: movement._id,
+            data: {
+              notes: data.notes,
+            },
+          });
+        }
       } else {
         // Create new movement
         await createMutation.mutateAsync(data);
@@ -174,7 +194,9 @@ export function StockMovementFormDialog({
           <DialogTitle>{mode === 'edit' ? 'Edit Stock Movement' : 'Record Stock Movement'}</DialogTitle>
           <DialogDescription>
             {mode === 'edit'
-              ? 'Update notes and details for this stock movement.'
+              ? movement?.status === 'COMPLETED'
+                ? 'Movement is completed. Only notes can be updated.'
+                : 'Update movement details before completing it.'
               : 'Record incoming, outgoing, or adjustment of inventory stock.'}
           </DialogDescription>
         </DialogHeader>
@@ -196,7 +218,7 @@ export function StockMovementFormDialog({
                 onValueChange={(value) => {
                   setValue('itemId', value, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
                 }}
-                disabled={!!preselectedItemId || mode === 'edit'}
+                disabled={!!preselectedItemId || (mode === 'edit' && movement?.status === 'COMPLETED')}
               >
                 <SelectTrigger className={errors.itemId ? 'border-red-500' : ''}>
                   <SelectValue placeholder="Select inventory item">
@@ -234,7 +256,7 @@ export function StockMovementFormDialog({
               <Select
                 value={selectedMovementType || undefined}
                 onValueChange={(value: any) => setValue('movementType', value, { shouldValidate: true })}
-                disabled={mode === 'edit'}
+                disabled={mode === 'edit' && movement?.status === 'COMPLETED'}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
@@ -262,7 +284,7 @@ export function StockMovementFormDialog({
                 type="number"
                 step="0.01"
                 min="0.01"
-                disabled={mode === 'edit'}
+                disabled={mode === 'edit' && movement?.status === 'COMPLETED'}
                 {...register('quantity', {
                   required: 'Quantity is required',
                   valueAsNumber: true,
