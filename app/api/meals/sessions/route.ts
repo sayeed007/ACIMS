@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     const mealType = searchParams.get('mealType');
     const isActive = searchParams.get('isActive');
 
-    const query: any = {};
+    const query: any = { isDeleted: false }; // Exclude soft-deleted meal sessions by default
 
     // Filter by status
     if (status) {
@@ -132,8 +132,11 @@ export async function POST(request: NextRequest) {
       return validationError('Invalid time format. Use HH:mm format');
     }
 
-    // Check if code already exists
-    const existingSession = await MealSession.findOne({ code: code.toUpperCase() });
+    // Check if code already exists (excluding soft-deleted meal sessions)
+    const existingSession = await MealSession.findOne({
+      code: code.toUpperCase(),
+      isDeleted: false
+    });
     if (existingSession) {
       return conflictError('Meal session with this code already exists');
     }

@@ -76,6 +76,7 @@ export function useCreateMealSession() {
     onSuccess: () => {
       toast.success('Meal session created successfully!');
       queryClient.invalidateQueries({ queryKey: ['meal-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['meal-session-stats'] });
     },
     onError: (error: any) => {
       const message = error.response?.data?.error?.message || 'Failed to create meal session';
@@ -97,6 +98,7 @@ export function useUpdateMealSession() {
       toast.success('Meal session updated successfully!');
       queryClient.invalidateQueries({ queryKey: ['meal-session', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['meal-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['meal-session-stats'] });
     },
     onError: (error: any) => {
       const message = error.response?.data?.error?.message || 'Failed to update meal session';
@@ -106,7 +108,7 @@ export function useUpdateMealSession() {
 }
 
 /**
- * Hook to delete a meal session (soft delete)
+ * Hook to archive a meal session (soft delete)
  */
 export function useDeleteMealSession() {
   const queryClient = useQueryClient();
@@ -114,11 +116,12 @@ export function useDeleteMealSession() {
   return useMutation({
     mutationFn: (id: string) => api.deleteMealSession(id),
     onSuccess: () => {
-      toast.success('Meal session deleted successfully!');
+      toast.success('Meal session archived successfully!');
       queryClient.invalidateQueries({ queryKey: ['meal-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['meal-session-stats'] });
     },
     onError: (error: any) => {
-      const message = error.response?.data?.error?.message || 'Failed to delete meal session';
+      const message = error.response?.data?.error?.message || 'Failed to archive meal session';
       toast.error(message);
     },
   });
@@ -141,6 +144,6 @@ export function useMealSessionStats() {
         active: activeSessions.meta?.pagination?.total || 0,
       };
     },
-    staleTime: 60000, // 1 minute
+    staleTime: 5000, // 5 seconds - short stale time ensures stats update quickly after mutations
   });
 }

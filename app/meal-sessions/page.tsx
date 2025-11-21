@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Utensils, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Search, Utensils, Pencil, Archive, Loader2, Download } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -32,14 +32,15 @@ import {
 } from '@/hooks/useMealSessions';
 import { MealSessionFormDialog } from '@/components/meal-sessions/meal-session-form-dialog';
 import { useAuth } from '@/lib/providers/auth-provider';
+import { toast } from 'sonner';
 
 export default function MealSessionsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
   const [selectedSession, setSelectedSession] = useState<MealSession | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+  const [sessionToArchive, setSessionToArchive] = useState<string | null>(null);
 
   const { user, hasPermission } = useAuth();
 
@@ -88,16 +89,59 @@ export default function MealSessionsPage() {
     setDialogOpen(true);
   };
 
-  const handleDeleteClick = (sessionId: string) => {
-    setSessionToDelete(sessionId);
-    setDeleteDialogOpen(true);
+  const handleArchiveClick = (sessionId: string) => {
+    setSessionToArchive(sessionId);
+    setArchiveDialogOpen(true);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (sessionToDelete) {
-      await deleteMutation.mutateAsync(sessionToDelete);
-      setDeleteDialogOpen(false);
-      setSessionToDelete(null);
+  const handleArchiveConfirm = async () => {
+    if (sessionToArchive) {
+      await deleteMutation.mutateAsync(sessionToArchive);
+      setArchiveDialogOpen(false);
+      setSessionToArchive(null);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const queryParams = new URLSearchParams();
+
+      if (searchQuery) {
+        queryParams.append('search', searchQuery);
+      }
+
+      const response = await fetch(`/api/meals/sessions/export?${queryParams.toString()}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Export failed');
+      }
+
+      // Get the blob from response
+      const blob = await response.blob();
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `meal_sessions_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success('Meal sessions exported successfully!');
+    } catch (error: any) {
+      console.error('Export error:', error);
+      toast.error(error.message || 'Failed to export meal sessions');
     }
   };
 
@@ -186,7 +230,10 @@ export default function MealSessionsPage() {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline">Export</Button>
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -271,10 +318,11 @@ export default function MealSessionsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeleteClick(session._id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleArchiveClick(session._id)}
+                            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                            title="Archive meal session"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Archive className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
@@ -295,29 +343,29 @@ export default function MealSessionsPage() {
         mode={dialogMode}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      {/* Archive Confirmation Dialog */}
+      <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Archive Meal Session?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the meal session. This action cannot be
-              undone.
+              This will archive the meal session and mark it as inactive. The session
+              will be hidden from the active list but can be restored later if needed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              className="bg-red-600 hover:bg-red-700"
+              onClick={handleArchiveConfirm}
+              className="bg-orange-600 hover:bg-orange-700"
             >
               {deleteMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
+                  Archiving...
                 </>
               ) : (
-                'Delete'
+                'Archive'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
