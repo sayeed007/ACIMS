@@ -120,7 +120,7 @@ export function useUpdateShift() {
 }
 
 /**
- * Hook to delete a shift (soft delete)
+ * Hook to archive a shift (soft delete)
  */
 export function useDeleteShift() {
   const queryClient = useQueryClient();
@@ -128,12 +128,12 @@ export function useDeleteShift() {
   return useMutation({
     mutationFn: (id: string) => api.deleteShift(id),
     onSuccess: () => {
-      toast.success('Shift deleted successfully!');
+      toast.success('Shift archived successfully!');
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
       queryClient.invalidateQueries({ queryKey: ['shift-stats'] });
     },
     onError: (error: any) => {
-      const message = error.response?.data?.error?.message || 'Failed to delete shift';
+      const message = error.response?.data?.error?.message || 'Failed to archive shift';
       toast.error(message);
     },
   });
@@ -156,6 +156,6 @@ export function useShiftStats() {
         active: activeShifts.meta?.pagination?.total || 0,
       };
     },
-    staleTime: 60000, // 1 minute
+    staleTime: 5000, // 5 seconds - short stale time ensures stats update quickly after mutations
   });
 }

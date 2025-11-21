@@ -92,8 +92,11 @@ export async function POST(request: NextRequest) {
       return validationError('Invalid time format. Use HH:mm format');
     }
 
-    // Check if code already exists
-    const existingShift = await Shift.findOne({ code: code.toUpperCase() });
+    // Check if code already exists (excluding soft-deleted shifts)
+    const existingShift = await Shift.findOne({
+      code: code.toUpperCase(),
+      isDeleted: false
+    });
     if (existingShift) {
       return conflictError('Shift with this code already exists');
     }
