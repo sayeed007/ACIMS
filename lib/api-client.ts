@@ -122,6 +122,14 @@ class ApiClient {
     });
   }
 
+  // PATCH request
+  async patch<T>(endpoint: string, body?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    });
+  }
+
   // DELETE request
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
@@ -283,6 +291,16 @@ export const api = {
     apiClient.get('/api/reports/costs', params),
   getAuditLogs: (params?: Record<string, any>) =>
     apiClient.get('/api/reports/audit', params),
+
+  // Number Sequences
+  getNumberSequences: () =>
+    apiClient.get('/api/settings/number-sequences'),
+  initializeNumberSequences: () =>
+    apiClient.post('/api/settings/number-sequences', {}),
+  updateNumberSequence: (entityType: string, data: any) =>
+    apiClient.put(`/api/settings/number-sequences/${entityType}`, data),
+  resetNumberSequence: (entityType: string, data: { resetTo: number }) =>
+    apiClient.patch(`/api/settings/number-sequences/${entityType}`, data),
 };
 
 export { apiClient };

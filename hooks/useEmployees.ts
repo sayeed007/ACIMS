@@ -50,7 +50,7 @@ export interface EmployeeFilters {
 }
 
 export interface CreateEmployeeData {
-  employeeId: string;
+  employeeId?: string; // Optional - will be auto-generated if not provided
   name: string;
   email?: string;
   phone?: string;

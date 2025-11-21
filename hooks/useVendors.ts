@@ -65,7 +65,7 @@ export interface VendorFilters {
 }
 
 export interface CreateVendorData {
-  vendorCode: string
+  vendorCode?: string // Optional - will be auto-generated if not provided
   name: string
   category: 'FOOD' | 'BEVERAGE' | 'INGREDIENTS' | 'PACKAGING' | 'EQUIPMENT' | 'SERVICES' | 'OTHER'
   contactPerson: {
