@@ -75,7 +75,7 @@ export async function PUT(
 
     const sequence = await updateSequenceConfig(entityType as EntityType, updates)
 
-    return successResponse(sequence, 'Number sequence updated successfully')
+    return successResponse(sequence)
   } catch (error: any) {
     console.error('Update number sequence error:', error)
     return errorResponse('INTERNAL_ERROR', error.message || 'Failed to update number sequence', null, 500)
@@ -111,7 +111,7 @@ export async function PATCH(
 
     const sequence = await resetSequence(entityType as EntityType, resetTo)
 
-    return successResponse(sequence, `Sequence reset to ${resetTo} successfully`)
+    return successResponse(sequence)
   } catch (error: any) {
     console.error('Reset number sequence error:', error)
     return errorResponse('INTERNAL_ERROR', error.message || 'Failed to reset number sequence', null, 500)

@@ -3,6 +3,7 @@ import connectDB from '@/lib/db/mongoose'
 import PurchaseOrder from '@/lib/db/models/PurchaseOrder'
 import { successResponse, errorResponse, validationError } from '@/lib/utils/api-response'
 import { getCurrentUser } from '@/lib/utils/auth-helpers'
+import { generateNextNumber } from '@/lib/utils/number-sequence'
 
 export async function GET(request: NextRequest) {
   try {
@@ -53,20 +54,32 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
 
-    if (!body.poNumber || !body.vendor || !body.deliveryDate || !body.items || body.items.length === 0) {
-      return validationError('PO number, vendor, delivery date, and items are required')
+    if (!body.vendor || !body.deliveryDate || !body.items || body.items.length === 0) {
+      return validationError('Vendor, delivery date, and items are required')
     }
 
     await connectDB()
 
-    const existingPO = await PurchaseOrder.findOne({ poNumber: body.poNumber.toUpperCase(), isDeleted: false })
-    if (existingPO) {
-      return validationError('PO number already exists')
+    // Auto-generate PO number if not provided
+    let poNumber = body.poNumber
+    if (!poNumber || poNumber.trim() === '') {
+      try {
+        poNumber = await generateNextNumber('PURCHASE_ORDER')
+      } catch (error: any) {
+        return errorResponse('INTERNAL_ERROR', `Failed to generate PO number: ${error.message}`, null, 500)
+      }
+    } else {
+      // If manual number provided, check for duplicates
+      poNumber = poNumber.toUpperCase()
+      const existingPO = await PurchaseOrder.findOne({ poNumber, isDeleted: false })
+      if (existingPO) {
+        return validationError('PO number already exists')
+      }
     }
 
     const po = await PurchaseOrder.create({
       ...body,
-      poNumber: body.poNumber.toUpperCase(),
+      poNumber,
       createdBy: { id: user._id, name: user.name, email: user.email },
     })
 

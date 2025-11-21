@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     const sequences = await NumberSequence.find().sort({ entityType: 1 }).lean()
 
-    return successResponse(sequences, 'Default number sequences initialized successfully')
+    return successResponse(sequences)
   } catch (error: any) {
     console.error('Initialize number sequences error:', error)
     return errorResponse('INTERNAL_ERROR', error.message || 'Failed to initialize number sequences', null, 500)

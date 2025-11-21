@@ -3,6 +3,7 @@ import connectDB from '@/lib/db/mongoose'
 import PurchaseDemand from '@/lib/db/models/PurchaseDemand'
 import { successResponse, errorResponse, validationError } from '@/lib/utils/api-response'
 import { getCurrentUser } from '@/lib/utils/auth-helpers'
+import { generateNextNumber } from '@/lib/utils/number-sequence'
 
 /**
  * GET /api/procurement/demands - Get all purchase demands with filtering
@@ -81,25 +82,36 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     // Validate required fields
-    if (!body.demandNumber || !body.requiredByDate || !body.items || body.items.length === 0) {
-      return validationError('Demand number, required by date, and at least one item are required')
+    if (!body.requiredByDate || !body.items || body.items.length === 0) {
+      return validationError('Required by date and at least one item are required')
     }
 
     await connectDB()
 
-    // Check if demand number already exists
-    const existingDemand = await PurchaseDemand.findOne({
-      demandNumber: body.demandNumber.toUpperCase(),
-      isDeleted: false,
-    })
+    // Auto-generate demand number if not provided
+    let demandNumber = body.demandNumber
+    if (!demandNumber || demandNumber.trim() === '') {
+      try {
+        demandNumber = await generateNextNumber('DEMAND')
+      } catch (error: any) {
+        return errorResponse('INTERNAL_ERROR', `Failed to generate demand number: ${error.message}`, null, 500)
+      }
+    } else {
+      // If manual number provided, check for duplicates
+      demandNumber = demandNumber.toUpperCase()
+      const existingDemand = await PurchaseDemand.findOne({
+        demandNumber,
+        isDeleted: false,
+      })
 
-    if (existingDemand) {
-      return validationError('Demand number already exists')
+      if (existingDemand) {
+        return validationError('Demand number already exists')
+      }
     }
 
     // Create demand
     const demand = await PurchaseDemand.create({
-      demandNumber: body.demandNumber.toUpperCase(),
+      demandNumber,
       demandDate: body.demandDate || new Date(),
       requiredByDate: new Date(body.requiredByDate),
       generationType: body.generationType || 'MANUAL',

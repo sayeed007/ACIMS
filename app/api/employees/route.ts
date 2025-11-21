@@ -12,6 +12,7 @@ import {
   getPaginationMeta,
 } from '@/lib/utils/api-response';
 import { getCurrentUser } from '@/lib/utils/auth-helpers';
+import { generateNextNumber } from '@/lib/utils/number-sequence';
 
 // export const dynamic = 'force-dynamic';
 
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
-      employeeId,
+      employeeId: providedEmployeeId,
       name,
       email,
       phone,
@@ -130,19 +131,30 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validation
-    if (!employeeId || !name || !departmentId || !shiftId || !employmentType || !joiningDate) {
+    if (!name || !departmentId || !shiftId || !employmentType || !joiningDate) {
       return validationError(
-        'Employee ID, name, department, shift, employment type, and joining date are required'
+        'Name, department, shift, employment type, and joining date are required'
       );
     }
 
-    // Check if employee ID already exists (excluding soft-deleted employees)
-    const existingEmployee = await Employee.findOne({
-      employeeId,
-      isDeleted: false
-    });
-    if (existingEmployee) {
-      return conflictError('Employee with this ID already exists');
+    // Auto-generate employee ID if not provided
+    let employeeId = providedEmployeeId
+    if (!employeeId || employeeId.trim() === '') {
+      try {
+        employeeId = await generateNextNumber('EMPLOYEE')
+      } catch (error: any) {
+        return internalServerError(`Failed to generate employee ID: ${error.message}`)
+      }
+    } else {
+      // If manual ID provided, check for duplicates
+      employeeId = employeeId.toUpperCase()
+      const existingEmployee = await Employee.findOne({
+        employeeId,
+        isDeleted: false
+      });
+      if (existingEmployee) {
+        return conflictError('Employee with this ID already exists');
+      }
     }
 
     // Create employee

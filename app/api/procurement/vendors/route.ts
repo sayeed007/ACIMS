@@ -3,6 +3,7 @@ import connectDB from '@/lib/db/mongoose';
 import Vendor from '@/lib/db/models/Vendor'
 import { successResponse, errorResponse, validationError } from '@/lib/utils/api-response'
 import { getCurrentUser } from '@/lib/utils/auth-helpers'
+import { generateNextNumber } from '@/lib/utils/number-sequence'
 
 /**
  * GET /api/procurement/vendors - Get all vendors with filtering
@@ -82,25 +83,36 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     // Validate required fields
-    if (!body.vendorCode || !body.name || !body.category) {
-      return validationError('Vendor code, name, and category are required')
+    if (!body.name || !body.category) {
+      return validationError('Name and category are required')
     }
 
     await connectDB()
 
-    // Check if vendor code already exists
-    const existingVendor = await Vendor.findOne({
-      vendorCode: body.vendorCode.toUpperCase(),
-      isDeleted: false,
-    })
+    // Auto-generate vendor code if not provided
+    let vendorCode = body.vendorCode
+    if (!vendorCode || vendorCode.trim() === '') {
+      try {
+        vendorCode = await generateNextNumber('VENDOR')
+      } catch (error: any) {
+        return errorResponse('INTERNAL_ERROR', `Failed to generate vendor code: ${error.message}`, null, 500)
+      }
+    } else {
+      // If manual code provided, check for duplicates
+      vendorCode = vendorCode.toUpperCase()
+      const existingVendor = await Vendor.findOne({
+        vendorCode,
+        isDeleted: false,
+      })
 
-    if (existingVendor) {
-      return validationError('Vendor code already exists')
+      if (existingVendor) {
+        return validationError('Vendor code already exists')
+      }
     }
 
     // Create vendor
     const vendor = await Vendor.create({
-      vendorCode: body.vendorCode.toUpperCase(),
+      vendorCode,
       name: body.name,
       category: body.category,
       contactPerson: {

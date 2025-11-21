@@ -4,6 +4,7 @@ import StockMovement from '@/lib/db/models/StockMovement';
 import InventoryItem from '@/lib/db/models/InventoryItem';
 import { successResponse, errorResponse, validationError } from '@/lib/utils/api-response';
 import { getCurrentUser } from '@/lib/utils/auth-helpers';
+import { generateNextNumber } from '@/lib/utils/number-sequence';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -144,6 +145,16 @@ export async function POST(request: NextRequest) {
       stockAfter = stockBefore;
     }
 
+    // Auto-generate reference number if not provided
+    let referenceNumber = body.referenceNumber
+    if (!referenceNumber || referenceNumber.trim() === '') {
+      try {
+        referenceNumber = await generateNextNumber('STOCK_MOVEMENT')
+      } catch (error: any) {
+        return errorResponse('INTERNAL_ERROR', `Failed to generate reference number: ${error.message}`, null, 500)
+      }
+    }
+
     // Create stock movement
     const movement = await StockMovement.create({
       item: {
@@ -158,7 +169,7 @@ export async function POST(request: NextRequest) {
       toLocation: body.toLocation,
       referenceType: body.referenceType,
       referenceId: body.referenceId,
-      referenceNumber: body.referenceNumber,
+      referenceNumber,
       costPerUnit: body.costPerUnit || item.avgCostPerUnit,
       stockBefore,
       stockAfter,
