@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Search, ShoppingCart, Loader2, Package, Truck } from 'lucide-react'
+import { Plus, Search, ShoppingCart, Loader2, Package, Truck, Pencil, Send, CheckCircle } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { usePurchaseOrders, usePurchaseOrderStats } from '@/hooks/usePurchaseOrders'
+import { usePurchaseOrders, usePurchaseOrderStats, useUpdatePurchaseOrder } from '@/hooks/usePurchaseOrders'
 import { PurchaseOrderFormDialog } from '@/components/procurement/purchase-order-form-dialog'
 import { format } from 'date-fns'
 
@@ -32,6 +32,7 @@ export default function PurchaseOrdersPage() {
   })
 
   const { data: statsData, isLoading: statsLoading } = usePurchaseOrderStats()
+  const updateMutation = useUpdatePurchaseOrder()
 
   const orders = data?.data || []
   const stats = (statsData?.data as any) || { total: 0, draft: 0, approved: 0, fullyReceived: 0 }
@@ -46,6 +47,20 @@ export default function PurchaseOrdersPage() {
     setSelectedOrder(order)
     setFormMode('edit')
     setFormOpen(true)
+  }
+
+  const handleApprove = async (orderId: string) => {
+    await updateMutation.mutateAsync({
+      id: orderId,
+      data: { status: 'APPROVED' },
+    })
+  }
+
+  const handleSendToVendor = async (orderId: string) => {
+    await updateMutation.mutateAsync({
+      id: orderId,
+      data: { status: 'SENT_TO_VENDOR' },
+    })
   }
 
   return (
@@ -154,6 +169,7 @@ export default function PurchaseOrdersPage() {
                   <TableHead>Delivery Date</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -168,6 +184,47 @@ export default function PurchaseOrdersPage() {
                       <Badge className={STATUS_COLORS[order.status as keyof typeof STATUS_COLORS]}>
                         {order.status.replace(/_/g, ' ')}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        {/* Edit button for DRAFT orders */}
+                        {order.status === 'DRAFT' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(order)}
+                            title="Edit purchase order"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+
+                        {/* Approve button for DRAFT orders */}
+                        {order.status === 'DRAFT' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleApprove(order._id)}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            title="Approve purchase order"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                          </Button>
+                        )}
+
+                        {/* Send to Vendor button for APPROVED orders */}
+                        {order.status === 'APPROVED' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSendToVendor(order._id)}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            title="Send to vendor"
+                          >
+                            <Send className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

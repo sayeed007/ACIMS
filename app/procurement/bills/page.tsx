@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Search, FileText, Loader2, DollarSign, AlertCircle } from 'lucide-react'
+import { Plus, Search, FileText, Loader2, DollarSign, AlertCircle, Pencil, Send, CheckCircle } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { useBills, useBillStats } from '@/hooks/useBills'
+import { useBills, useBillStats, useUpdateBill } from '@/hooks/useBills'
 import { BillFormDialog } from '@/components/procurement/bill-form-dialog'
 import { format } from 'date-fns'
 
@@ -36,6 +36,7 @@ export default function BillsPage() {
   })
 
   const { data: statsData, isLoading: statsLoading } = useBillStats()
+  const updateMutation = useUpdateBill()
 
   const bills = data?.data || []
   const stats = (statsData?.data as any) || { total: 0, unpaid: 0, partiallyPaid: 0, fullyPaid: 0, totalOutstanding: 0 }
@@ -50,6 +51,27 @@ export default function BillsPage() {
     setSelectedBill(bill)
     setFormMode('edit')
     setFormOpen(true)
+  }
+
+  const handleSubmit = async (billId: string) => {
+    await updateMutation.mutateAsync({
+      id: billId,
+      data: { status: 'SUBMITTED' },
+    })
+  }
+
+  const handleApprove = async (billId: string) => {
+    await updateMutation.mutateAsync({
+      id: billId,
+      data: { status: 'APPROVED' },
+    })
+  }
+
+  const handlePost = async (billId: string) => {
+    await updateMutation.mutateAsync({
+      id: billId,
+      data: { status: 'POSTED' },
+    })
   }
 
   return (
@@ -160,6 +182,7 @@ export default function BillsPage() {
                   <TableHead>Balance</TableHead>
                   <TableHead>Payment Status</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -180,6 +203,60 @@ export default function BillsPage() {
                       <Badge className={STATUS_COLORS[bill.status as keyof typeof STATUS_COLORS]}>
                         {bill.status}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        {/* Edit button for DRAFT bills */}
+                        {bill.status === 'DRAFT' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(bill)}
+                            title="Edit bill"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+
+                        {/* Submit button for DRAFT bills */}
+                        {bill.status === 'DRAFT' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSubmit(bill._id)}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            title="Submit bill for approval"
+                          >
+                            <Send className="h-4 w-4" />
+                          </Button>
+                        )}
+
+                        {/* Approve button for SUBMITTED bills */}
+                        {bill.status === 'SUBMITTED' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleApprove(bill._id)}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            title="Approve bill"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                          </Button>
+                        )}
+
+                        {/* Post button for APPROVED bills */}
+                        {bill.status === 'APPROVED' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handlePost(bill._id)}
+                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                            title="Post bill to accounts"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
