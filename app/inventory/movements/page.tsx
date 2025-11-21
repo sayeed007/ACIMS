@@ -50,6 +50,7 @@ import {
 } from '@/hooks/useStockMovements'
 import { StockMovementFormDialog } from '@/components/inventory/stock-movement-form-dialog'
 import { useAuth } from '@/lib/providers/auth-provider'
+import { canAccess } from '@/lib/utils/permissions'
 
 const MOVEMENT_TYPE_COLORS = {
   IN: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
@@ -76,7 +77,7 @@ export default function StockMovementsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [movementToDelete, setMovementToDelete] = useState<string | null>(null)
 
-  const { user, hasPermission } = useAuth()
+  const auth = useAuth()
 
   // Fetch stock movements with filters
   const { data, isLoading, error } = useStockMovements({
@@ -94,21 +95,10 @@ export default function StockMovementsPage() {
   const movements = data?.data || []
   const stats = statsData || { total: 0, in: 0, out: 0 }
 
-  // Check permissions
-  const canCreateMovement =
-    hasPermission('inventory:create') ||
-    user?.role === 'ADMIN' ||
-    user?.role === 'SUPER_ADMIN' ||
-    user?.role === 'STORE_KEEPER'
-  const canEditMovement =
-    hasPermission('inventory:update') ||
-    user?.role === 'ADMIN' ||
-    user?.role === 'SUPER_ADMIN' ||
-    user?.role === 'STORE_KEEPER'
-  const canDeleteMovement =
-    hasPermission('inventory:delete') ||
-    user?.role === 'ADMIN' ||
-    user?.role === 'SUPER_ADMIN'
+  // Check permissions using centralized utility
+  const canCreateMovement = canAccess.stockMovements.create(auth)
+  const canEditMovement = canAccess.stockMovements.edit(auth)
+  const canDeleteMovement = canAccess.stockMovements.delete(auth)
 
   // Handlers
   const handleRecordMovement = () => {

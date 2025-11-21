@@ -35,6 +35,7 @@ import { InventoryItemFormDialog } from '@/components/inventory/inventory-item-f
 import { InventoryItemImportDialog } from '@/components/inventory/inventory-item-import-dialog'
 import { InventoryItemFilterDialog, type InventoryItemFilters } from '@/components/inventory/inventory-item-filter-dialog'
 import { useAuth } from '@/lib/providers/auth-provider'
+import { canAccess } from '@/lib/utils/permissions'
 import { toast } from 'sonner'
 
 export default function InventoryItemsPage() {
@@ -48,7 +49,7 @@ export default function InventoryItemsPage() {
   const [filterDialogOpen, setFilterDialogOpen] = useState(false)
   const [filters, setFilters] = useState<InventoryItemFilters>({})
 
-  const { user, hasPermission } = useAuth()
+  const auth = useAuth()
 
   // Fetch inventory items with search filter and other filters
   const { data, isLoading, error } = useInventoryItems({
@@ -68,21 +69,10 @@ export default function InventoryItemsPage() {
   const items = data?.data || []
   const stats: InventoryStats = statsData ?? { total: 0, lowStock: 0, totalValue: 0 }
 
-  // Check permissions
-  const canCreateItem =
-    hasPermission('inventory:create') ||
-    user?.role === 'ADMIN' ||
-    user?.role === 'SUPER_ADMIN' ||
-    user?.role === 'STORE_KEEPER'
-  const canEditItem =
-    hasPermission('inventory:update') ||
-    user?.role === 'ADMIN' ||
-    user?.role === 'SUPER_ADMIN' ||
-    user?.role === 'STORE_KEEPER'
-  const canDeleteItem =
-    hasPermission('inventory:delete') ||
-    user?.role === 'ADMIN' ||
-    user?.role === 'SUPER_ADMIN'
+  // Check permissions using centralized utility
+  const canCreateItem = canAccess.inventory.create(auth)
+  const canEditItem = canAccess.inventory.edit(auth)
+  const canDeleteItem = canAccess.inventory.delete(auth)
 
   // Handlers
   const handleCreateItem = () => {
