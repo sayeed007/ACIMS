@@ -138,24 +138,14 @@ export function useDeleteInventoryItem() {
 
 /**
  * Hook to get inventory statistics
+ * Uses dedicated stats endpoint for efficient server-side aggregation
  */
 export function useInventoryStats() {
   return useQuery({
     queryKey: ['inventory-stats'],
     queryFn: async () => {
-      const [allItems, lowStockItems] = await Promise.all([
-        api.getInventoryItems({}),
-        api.getInventoryItems({ lowStock: true }),
-      ]);
-
-      const items = allItems.data || [];
-      const totalValue = items.reduce((sum: number, item: any) => sum + (item.totalValue || 0), 0);
-
-      return {
-        total: allItems.meta?.pagination?.total || 0,
-        lowStock: lowStockItems.meta?.pagination?.total || 0,
-        totalValue: totalValue,
-      };
+      const response = await api.getInventoryItemStats();
+      return response.data || { total: 0, lowStock: 0, totalValue: 0 };
     },
     staleTime: 5000, // 5 seconds - short stale time ensures stats update quickly after mutations
   });

@@ -192,6 +192,7 @@ export const api = {
     apiClient.put(`/api/inventory/items/${id}`, data),
   deleteInventoryItem: (id: string) =>
     apiClient.delete(`/api/inventory/items/${id}`),
+  getInventoryItemStats: () => apiClient.get('/api/inventory/items/stats'),
 
   // Stock Movements
   getStockMovements: (params?: Record<string, any>) =>
