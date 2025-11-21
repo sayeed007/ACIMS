@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useEmployees, useDeleteEmployee, useEmployeeStats, type Employee } from '@/hooks/useEmployees'
 import { EmployeeFormDialog } from '@/components/employees/employee-form-dialog'
+import { EmployeeImportDialog } from '@/components/employees/employee-import-dialog'
 import { useAuth } from '@/lib/providers/auth-provider'
 
 export default function EmployeesPage() {
@@ -35,6 +36,7 @@ export default function EmployeesPage() {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [employeeToDelete, setEmployeeToDelete] = useState<string | null>(null)
+  const [importDialogOpen, setImportDialogOpen] = useState(false)
 
   const { user, hasPermission } = useAuth()
 
@@ -97,7 +99,7 @@ export default function EmployeesPage() {
         <div className="flex gap-2">
           {canCreateEmployee && (
             <>
-              <Button variant="outline">
+              <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
                 <Upload className="mr-2 h-4 w-4" />
                 Import
               </Button>
@@ -290,6 +292,12 @@ export default function EmployeesPage() {
         onOpenChange={setDialogOpen}
         employee={selectedEmployee}
         mode={dialogMode}
+      />
+
+      {/* Employee Import Dialog */}
+      <EmployeeImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
       />
 
       {/* Delete Confirmation Dialog */}

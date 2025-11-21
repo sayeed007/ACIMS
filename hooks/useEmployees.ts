@@ -173,3 +173,44 @@ export function useEmployeeStats() {
     staleTime: 60000, // 1 minute
   });
 }
+
+/**
+ * Hook to bulk import employees from Excel file
+ */
+export function useBulkImportEmployees() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (formData: FormData) => {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/employees/bulk-import', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw { response: { data } };
+      }
+
+      return data;
+    },
+    onSuccess: (response) => {
+      const successCount = response.data?.successCount || 0;
+      if (successCount > 0) {
+        toast.success(`Successfully imported ${successCount} employee(s)!`);
+        // Invalidate employees list to refresh data
+        queryClient.invalidateQueries({ queryKey: ['employees'] });
+        queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
+      }
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.error?.message || 'Failed to import employees';
+      toast.error(message);
+    },
+  });
+}
