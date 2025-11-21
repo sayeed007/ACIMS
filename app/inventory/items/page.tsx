@@ -180,10 +180,16 @@ export default function InventoryItemsPage() {
         </div>
         <div className="flex gap-2">
           {canCreateItem && (
-            <Button onClick={handleCreateItem}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Item
-            </Button>
+            <>
+              <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+                <Upload className="mr-2 h-4 w-4" />
+                Import
+              </Button>
+              <Button onClick={handleCreateItem}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Item
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -257,12 +263,6 @@ export default function InventoryItemsPage() {
                 className="pl-10"
               />
             </div>
-            {canCreateItem && (
-              <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
-                <Upload className="mr-2 h-4 w-4" />
-                Import
-              </Button>
-            )}
             <Button variant="outline" onClick={() => setFilterDialogOpen(true)}>
               <Filter className="mr-2 h-4 w-4" />
               Filter
