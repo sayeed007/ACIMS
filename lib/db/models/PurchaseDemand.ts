@@ -188,7 +188,7 @@ const purchaseDemandSchema = new Schema<IPurchaseDemand>(
 )
 
 // Indexes
-purchaseDemandSchema.index({ demandNumber: 1 })
+// demandNumber already has unique: true, so no need to create another index
 purchaseDemandSchema.index({ demandDate: -1 })
 purchaseDemandSchema.index({ finalStatus: 1 })
 purchaseDemandSchema.index({ 'createdBy.id': 1 })

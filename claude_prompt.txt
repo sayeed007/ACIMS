@@ -1,7 +1,0 @@
-I have 4 feature in procurements - C:\Users\nsl\Desktop\FoodManagement\app\procurement folder
-- Demand
-- Vendors complete feature with create functionality 
-- Purchase Orders
-- Bills
-
-now I need you to add the rest 3 create form - should place in components\procurement and follow existing pattern like the components\procurement\vendor-form-dialog.tsx

@@ -216,7 +216,7 @@ billSchema.pre('save', function (next) {
 })
 
 // Indexes
-billSchema.index({ billNumber: 1 })
+// billNumber already has unique: true, so no need to create another index
 billSchema.index({ billDate: -1 })
 billSchema.index({ dueDate: 1 })
 billSchema.index({ paymentStatus: 1 })

@@ -58,7 +58,7 @@ const numberSequenceSchema = new Schema<INumberSequence>(
 );
 
 // Index for faster lookups
-numberSequenceSchema.index({ entityType: 1 });
+// entityType already has unique: true, so no need to create another index
 
 const NumberSequence: Model<INumberSequence> =
   mongoose.models.NumberSequence || mongoose.model<INumberSequence>('NumberSequence', numberSequenceSchema);

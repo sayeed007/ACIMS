@@ -198,7 +198,7 @@ const accessControlRuleSchema = new Schema<IAccessControlRule>(
 )
 
 // Indexes
-accessControlRuleSchema.index({ roleName: 1 })
+// roleName already has unique: true, so no need to create another index
 accessControlRuleSchema.index({ isActive: 1 })
 accessControlRuleSchema.index({ isDeleted: 1 })
 accessControlRuleSchema.index({ isSystemRole: 1 })

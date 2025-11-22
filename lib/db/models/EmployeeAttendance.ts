@@ -75,7 +75,7 @@ const employeeAttendanceSchema = new Schema<IEmployeeAttendance>(
 
 // Compound index for unique constraint and fast lookups
 // employeeAttendanceSchema.index({ employeeId: 1, date: 1 }, { unique: true });
-employeeAttendanceSchema.index({ date: -1 });
+// Removed duplicate index on date - the TTL index below also indexes date
 employeeAttendanceSchema.index({ status: 1, date: -1 });
 
 // TTL index - keep only 90 days of attendance data

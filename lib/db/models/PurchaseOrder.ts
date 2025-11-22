@@ -249,7 +249,7 @@ purchaseOrderSchema.pre('save', function (next) {
 })
 
 // Indexes
-purchaseOrderSchema.index({ poNumber: 1 })
+// poNumber already has unique: true, so no need to create another index
 purchaseOrderSchema.index({ poDate: -1 })
 purchaseOrderSchema.index({ status: 1 })
 purchaseOrderSchema.index({ 'vendor.id': 1 })

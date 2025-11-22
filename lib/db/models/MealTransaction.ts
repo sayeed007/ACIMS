@@ -59,7 +59,7 @@ const mealTransactionSchema = new Schema<IMealTransaction>(
     date: {
       type: Date,
       required: true,
-      index: true,
+      // Removed index: true - date is already indexed in compound and TTL indexes below
     },
     mealSession: {
       id: {
