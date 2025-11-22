@@ -34,7 +34,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 dark:bg-slate-900">
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 dark:bg-slate-900">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900">
@@ -48,7 +48,7 @@ export default function RegisterPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Register</CardTitle>
+            <CardTitle as="h2">Register</CardTitle>
             <CardDescription>
               Fill in your details to create an account
             </CardDescription>
@@ -153,6 +153,6 @@ export default function RegisterPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </main>
   );
 }

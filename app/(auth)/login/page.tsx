@@ -29,7 +29,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-slate-900">
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-slate-900">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900">
@@ -43,7 +43,7 @@ export default function LoginPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Login</CardTitle>
+            <CardTitle as="h2">Login</CardTitle>
             <CardDescription>
               Enter your credentials to access the system
             </CardDescription>
@@ -116,6 +116,6 @@ export default function LoginPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </main>
   );
 }
